@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --ow-bg: #f5f7fb;
+  --ow-panel: #fcfdff;
+  --ow-panel-2: #eef3f9;
+  --ow-line: rgba(17, 24, 39, 0.12);
+  --ow-soft-line: rgba(17, 24, 39, 0.06);
+  --ow-text: #16202c;
+  --ow-muted: #68788a;
+  --ow-accent: #f28b2f;
+  --ow-accent-2: #ffbf69;
+  --ow-green: #3bb273;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: #16202c;
+  font-family: "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(242, 139, 47, 0.18), transparent 22%),
+    radial-gradient(circle at 82% 14%, rgba(255, 191, 105, 0.2), transparent 16%),
+    radial-gradient(circle at bottom right, rgba(73, 127, 191, 0.12), transparent 24%),
+    linear-gradient(180deg, #f8fafc 0%, #f3f6fb 44%, #eef3f9 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(242, 139, 47, 0.28);
+}
+
+.ow-shell {
+  min-height: 100vh;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.38), transparent 35%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 22%);
+}
+
+.ow-cut-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--ow-line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(242, 246, 251, 0.98) 100%);
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 0 100%);
+}
+
+.ow-cut-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(242, 139, 47, 0.1), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent 24%);
+}
+
+.ow-cut-panel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 24px;
+  height: 2px;
+  width: 120px;
+  background: linear-gradient(90deg, var(--ow-accent), transparent);
+  pointer-events: none;
+}
+
+.ow-panel-light {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(239, 244, 250, 0.96) 100%);
+  box-shadow:
+    0 18px 48px rgba(15, 23, 42, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+}
+
+.ow-panel-light::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(242, 139, 47, 0.08), transparent 18%);
+}
+
+.ow-title {
+  color: #536579;
+  letter-spacing: 0.16em;
+}
+
+.ow-muted {
+  color: var(--ow-muted);
+}
+
+.ow-badge {
+  border: 1px solid rgba(242, 139, 47, 0.35);
+  background: rgba(242, 139, 47, 0.1);
+  color: #8f4b10;
+}
+
+.ow-primary-button {
+  border: 1px solid rgba(242, 139, 47, 0.55);
+  background: linear-gradient(180deg, #ffbf69 0%, #f28b2f 100%);
+  color: #101722;
+  box-shadow: 0 12px 24px rgba(242, 139, 47, 0.18);
+}
+
+.ow-primary-button:hover {
+  filter: brightness(1.03);
+}
+
+.ow-ghost-button {
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: rgba(255, 255, 255, 0.65);
+  color: #243243;
+}
+
+.ow-ghost-button:hover {
+  border-color: rgba(242, 139, 47, 0.34);
+  background: rgba(242, 139, 47, 0.08);
+}
+
+.ow-status-live {
+  border-color: rgba(59, 178, 115, 0.35);
+  background: rgba(59, 178, 115, 0.1);
+  color: #17603c;
+}
+
+.ow-status-ready {
+  border-color: rgba(242, 139, 47, 0.35);
+  background: rgba(242, 139, 47, 0.1);
+  color: #8f4b10;
+}
+
+.ow-status-done {
+  border-color: rgba(17, 24, 39, 0.1);
+  background: rgba(17, 24, 39, 0.04);
+  color: #556476;
+}
