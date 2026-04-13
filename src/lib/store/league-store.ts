@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist, StateStorage } from "zustand/middleware";
 import { DEFAULT_LEAGUE_RULES, DEFAULT_SIMULATION_CONFIG } from "@/lib/constants";
 import { recommendPriorSeasonId } from "@/lib/domain/prior";
 import {
@@ -249,6 +249,12 @@ function areStringArraysEqual(left: string[], right: string[]): boolean {
 const initialLeague = normalizeLeague(loadSampleLeague());
 export const STORE_VERSION = 3;
 export const SAMPLE_DATA_VERSION = 2;
+
+const noopStorage: StateStorage = {
+  getItem: () => null,
+  setItem: () => undefined,
+  removeItem: () => undefined
+};
 
 function areLeaguesEquivalent(left: League, right: League): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
@@ -729,6 +735,9 @@ export const useLeagueStore = create<LeagueStoreState>()(
     {
       name: "league-archive-store",
       version: STORE_VERSION,
+      storage: createJSONStorage(() =>
+        typeof window === "undefined" ? noopStorage : window.localStorage
+      ),
       migrate: (persistedState, version) => {
         if (!persistedState || typeof persistedState !== "object") {
           return migratePersistedLeagueStore(undefined);
