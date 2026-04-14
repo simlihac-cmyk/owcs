@@ -287,10 +287,6 @@ export function SeasonDetail({
             <div className="mt-4 inline-flex rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700">
               {getSeasonStatusLabel(season.status)}
             </div>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--ow-text)]">
-              직전 시즌 결과를 기반으로 초기 전력을 만들고, 현재 시즌이 진행될수록 prior 영향은 줄이고 현재 폼과
-              상대 강도를 더 반영하는 방식으로 최종 순위 확률을 계산합니다.
-            </p>
           </div>
 
           <div className="ow-panel-light min-w-[290px] px-4 py-4 text-sm text-[var(--ow-text)]">
@@ -352,10 +348,7 @@ export function SeasonDetail({
               qualifierCount={season.rules.qualifierCount}
               ratingsByTeamId={insight.ratingsByTeamId}
             />
-            <Panel
-              title="확률 카드"
-                  description="지표를 눌러 시드 결정전, LCQ, 1위, 예상 최종 순위를 카드형으로 비교합니다."
-            >
+            <Panel title="확률 카드">
               <div className="mb-4 flex flex-wrap gap-2">
                 {summaryMetricOptions.map((option) => (
                   <button
@@ -386,10 +379,7 @@ export function SeasonDetail({
           />
 
           <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-            <Panel
-              title="중요 경기 캘린더"
-              description="날짜별로 경기 중요도를 정리합니다. 시드 결정전 판도에 큰 영향을 주는 경기가 위로 옵니다."
-            >
+            <Panel title="중요 경기 캘린더">
               {insight.remainingMatchInsights.length === 0 ? (
                 <p className="text-sm text-slate-500">남은 경기가 없습니다.</p>
               ) : (
@@ -397,10 +387,7 @@ export function SeasonDetail({
               )}
             </Panel>
 
-            <Panel
-              title="특정 경기 결과별 영향 보기"
-              description="경기와 지표를 선택하면 세트 스코어별 결과가 판도에 주는 영향을 비교할 수 있습니다."
-            >
+            <Panel title="경기 결과별 영향">
               {selectedMatchImpact ? (
                 <div className="space-y-4">
                   <select
@@ -523,7 +510,7 @@ export function SeasonDetail({
           <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
             <Panel
               title="전력과 모델 설정"
-              description={`prior 감쇠 ${season.simulationConfig.priorWeightDecay}, shrinkage ${season.simulationConfig.shrinkageMatches}경기, 상대 강도 반영 ${formatPercent(season.simulationConfig.opponentStrengthWeight * 100, 0)}입니다.`}
+              description={`prior ${season.simulationConfig.priorWeightDecay} · shrinkage ${season.simulationConfig.shrinkageMatches}경기 · 상대 강도 ${formatPercent(season.simulationConfig.opponentStrengthWeight * 100, 0)}`}
             >
               <div className="mb-4 grid gap-3 md:grid-cols-2">
                 <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
@@ -565,7 +552,7 @@ export function SeasonDetail({
             </Panel>
 
             <div className="space-y-6">
-              <Panel title="직전 시즌 대비 기대 순위 변화" description="이전 시즌 최종 순위와 현재 기대 순위를 비교합니다.">
+              <Panel title="직전 시즌 대비 기대 순위 변화">
                 <div className="space-y-3">
                   {insight.teamTrends.map((trend) => {
                     const brand = getTeamBrand(trend.teamId);
@@ -600,7 +587,7 @@ export function SeasonDetail({
                 </div>
               </Panel>
 
-              <Panel title="동률 및 타이브레이커 설명" description="현재 정렬 규칙에 따라 동률 구간을 문장으로 설명합니다.">
+              <Panel title="동률 메모">
                 {insight.tiebreakNotes.length === 0 ? (
                   <p className="text-sm text-slate-500">현재는 별도 설명이 필요한 동률 구간이 없습니다.</p>
                 ) : (
@@ -670,7 +657,7 @@ export function SeasonDetail({
               </div>
             </Panel>
 
-            <Panel title="완료 경기 리플레이" description="완료된 경기의 세트 스코어와 리플레이 코드를 확인합니다.">
+            <Panel title="완료 경기 리플레이">
               {insight.completedMatches.length === 0 ? (
                 <p className="text-sm text-slate-500">아직 완료된 경기가 없습니다.</p>
               ) : (
@@ -720,7 +707,7 @@ export function SeasonDetail({
           </div>
 
           <div className="space-y-6">
-            <Panel title="이전 시즌 기준 데이터" description="현재 시즌 prior의 기반이 된 직전 시즌 기록입니다.">
+            <Panel title="이전 시즌 기준 데이터">
               {insight.previousSeasonStats.length === 0 ? (
                 <p className="text-sm text-slate-500">
                   직전 시즌 데이터가 없어 중립 rating 또는 수동 rating을 사용합니다.

@@ -42,7 +42,7 @@ export function TeamPage(props: {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
-      <Panel title="팀 선택" description="팀별 전력과 확률, 시즌 일정을 바로 확인할 수 있습니다.">
+      <Panel title="팀 선택">
         <div className="space-y-3">
           {orderedTeamSummaries.map((item) => {
             const itemBrand = getTeamBrand(item.teamId);
@@ -82,14 +82,8 @@ export function TeamPage(props: {
             <div>
               <div className="flex items-center gap-3">
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: brand.primary }} />
-                <p className="text-xs uppercase tracking-[0.26em] text-slate-500">팀 페이지</p>
               </div>
               <h2 className="mt-3 text-3xl font-semibold text-ink">{props.teamMap[props.selectedTeamId]}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                현재 순위 {record.rank}위, 시드 결정전 확률{" "}
-                {formatPercent(summary.qualifierProbability, props.season.simulationConfig.decimalPlaces)}, 예상 최종 순위{" "}
-                {formatDecimal(summary.averageFinalRank, props.season.simulationConfig.decimalPlaces)}위
-              </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <StatCard label="현재 전력" value={formatRating(rating.blendedRating)} />
@@ -100,7 +94,7 @@ export function TeamPage(props: {
         </section>
 
         <div className="grid gap-6 xl:grid-cols-[0.96fr_1.04fr]">
-          <Panel title="전력 분석" description="초기 전력과 현재 시즌 반영 비중을 함께 보여줍니다.">
+          <Panel title="전력 분석">
             <div className="grid gap-3 md:grid-cols-2">
               <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
                 초기 rating {formatRating(rating.initialRating)}
@@ -117,12 +111,12 @@ export function TeamPage(props: {
             </div>
             <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
               {previousStat
-                ? `직전 시즌 ${props.priorTeamMap[props.selectedTeamId] ?? props.teamMap[props.selectedTeamId]}는 ${previousStat.finalRank}위, ${previousStat.wins}-${previousStat.losses}, 세트 득실 ${formatSigned(previousStat.setDiff)}를 기록했습니다.`
-                : "직전 시즌 데이터가 없거나 신규 팀으로 분류되어 중립 rating 또는 수동 rating을 사용합니다."}
+                ? `직전 시즌 ${previousStat.finalRank}위 · ${previousStat.wins}-${previousStat.losses} · SD ${formatSigned(previousStat.setDiff)}`
+                : "직전 시즌 기록 없음"}
             </div>
           </Panel>
 
-          <Panel title="순위 분포" description="이 팀이 최종 몇 위로 끝날 가능성이 높은지 확인합니다.">
+          <Panel title="순위 분포">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: props.insight.probabilitySummaries.length }, (_, index) => index + 1).map((rank) => {
                 const probability = summary.finishProbabilityByRank[rank] ?? 0;
@@ -146,7 +140,7 @@ export function TeamPage(props: {
           </Panel>
         </div>
 
-        <Panel title="시즌 일정과 결과" description="해당 팀의 경기 기록과 남은 일정을 날짜순으로 보여줍니다.">
+        <Panel title="시즌 일정">
           <div className="grid gap-3 md:grid-cols-2">
             {matches.map((match) => {
               const isHome = match.teamAId === props.selectedTeamId;

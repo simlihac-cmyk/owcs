@@ -80,10 +80,6 @@ export function SeasonArchiveList({
       <section className="ow-cut-panel px-5 py-6 text-[var(--ow-text)]">
         <p className="ow-title text-xs uppercase">시즌 아카이브</p>
         <h2 className="mt-3 text-[2.15rem] font-semibold tracking-[-0.03em]">{league.name}</h2>
-        <p className="mt-4 text-sm leading-7 text-[var(--ow-text)]">
-          예측을 이것저것 넣어본 뒤 현재 기준 상태로 돌아오고 싶으면 아래 초기화 버튼을 누르면 됩니다. 서버에서
-          관리하는 현재 기준 데이터 상태로 복구하는 용도입니다.
-        </p>
 
         <div className="mt-4">
           <button
@@ -103,9 +99,6 @@ export function SeasonArchiveList({
       <section className="ow-cut-panel p-5 text-[var(--ow-text)]">
         <div>
           <h3 className="text-base font-semibold text-[var(--ow-text)]">시즌 선택</h3>
-          <p className="mt-1 text-sm text-[var(--ow-muted)]">
-            먼저 연도를 고른 뒤, 해당 연도에 속한 스테이지를 선택해 주세요.
-          </p>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -169,9 +162,9 @@ export function SeasonArchiveList({
                     </span>
                     <span>{season.rules.roundRobinType === "double" ? "더블 라운드로빈" : "싱글 라운드로빈"}</span>
                   </div>
-                  <div className="mt-4 text-xs font-medium text-[#d96f17]">
-                    {selected ? "현재 선택된 시즌" : "클릭해서 상세 보기"}
-                  </div>
+                  {selected ? (
+                    <div className="mt-4 text-xs font-medium text-[#d96f17]">선택됨</div>
+                  ) : null}
                 </button>
               );
             })}

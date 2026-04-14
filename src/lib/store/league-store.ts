@@ -271,7 +271,7 @@ function areStringArraysEqual(left: string[], right: string[]): boolean {
 
 const initialLeague = normalizeIncomingLeague(loadSampleLeague());
 export const STORE_VERSION = 3;
-export const SAMPLE_DATA_VERSION = 2;
+export const SAMPLE_DATA_VERSION = 5;
 
 const noopStorage: StateStorage = {
   getItem: () => null,

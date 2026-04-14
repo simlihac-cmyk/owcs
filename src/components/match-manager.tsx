@@ -187,10 +187,6 @@ export function MatchManager({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-lg font-semibold text-ink">남은 경기 예측</h3>
-            <p className="mt-1 text-sm text-slate-500">
-              여기서 고르는 점수는 실제 결과를 덮어쓰는 게 아니라, 남은 경기 시나리오를 바로 반영해서
-              순위와 확률 변화를 확인하는 용도입니다.
-            </p>
           </div>
           <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
             {isLoading ? "계산 중.." : "예측 반영 완료"}

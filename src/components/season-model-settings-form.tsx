@@ -59,10 +59,6 @@ export function SeasonModelSettingsForm({ season, onSave }: SeasonModelSettingsF
     <div className="space-y-5">
       <div className="rounded-[28px] border border-white/60 bg-white/85 p-5 shadow-panel backdrop-blur">
         <h3 className="text-lg font-semibold text-ink">모델 설정</h3>
-        <p className="mt-2 text-sm leading-6 text-slate-500">
-          시즌 구조는 고정하고, 시뮬레이션 모델의 반응성만 조정합니다. 프리셋을 고르거나 세부
-          파라미터를 직접 바꿔볼 수 있습니다.
-        </p>
       </div>
 
       <div className="rounded-[28px] border border-white/60 bg-white/85 p-5 shadow-panel backdrop-blur">
@@ -78,11 +74,11 @@ export function SeasonModelSettingsForm({ season, onSave }: SeasonModelSettingsF
             </button>
           ))}
         </div>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
+        <div className="mt-3 grid gap-2 md:grid-cols-3">
           {MODEL_PRESETS.map((preset) => (
-            <div key={preset.id} className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
+            <div key={preset.id} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
               <p className="font-semibold text-ink">{preset.label}</p>
-              <p className="mt-1 leading-6">{preset.description}</p>
+              <p className="mt-1">{preset.description}</p>
             </div>
           ))}
         </div>
