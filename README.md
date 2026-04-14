@@ -101,6 +101,13 @@ npm test
 - `src/lib/dataProviders/jsonAdapters.ts`는 JSON 로딩/복제/아카이브 prior 로딩 인터페이스를 제공합니다.
 - 실제 API로 바꾸려면 이 폴더에 fetch 기반 adapter를 추가하고, `loadSampleLeague()` 대신 해당 adapter를 store 초기화 지점에서 사용하면 됩니다.
 
+## 관리자 접근 보호
+
+- `/admin`과 `/api/admin/*`는 운영 환경에서 Basic Auth로 보호됩니다.
+- 운영 배포 시 `OWCS_ADMIN_USERNAME`, `OWCS_ADMIN_PASSWORD`를 반드시 설정해야 합니다.
+- 운영 환경에서 위 값이 비어 있으면 관리자 페이지는 잠긴 상태로 유지됩니다.
+- 로컬 개발 환경에서는 별도 인증 없이 계속 접근할 수 있습니다.
+
 ## 샘플 데이터 설명
 
 - `2025 스테이지 3`: 완료된 시즌
