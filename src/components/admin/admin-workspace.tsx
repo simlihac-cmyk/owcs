@@ -88,6 +88,24 @@ function deriveSeasonStatus(matchesCount: number, playedCount: number): SeasonSt
   return "draft";
 }
 
+function getReplayCodeCount(result: MatchResult | null | undefined): number {
+  if (!result) {
+    return 0;
+  }
+
+  return result.setsA + result.setsB;
+}
+
+function normalizeReplayCodes(replayCodes: string[] | undefined, result: MatchResult | null | undefined): string[] {
+  const targetLength = getReplayCodeCount(result);
+
+  if (targetLength === 0) {
+    return [];
+  }
+
+  return Array.from({ length: targetLength }, (_, index) => replayCodes?.[index] ?? "");
+}
+
 function dedupeTeamNames(teamNames: string[]): string[] {
   return Array.from(
     new Set(
@@ -276,7 +294,8 @@ export function AdminWorkspace() {
           ? {
               ...match,
               played: Boolean(result),
-              result
+              result,
+              replayCodes: normalizeReplayCodes(match.replayCodes, result)
             }
           : match
       );
@@ -295,6 +314,32 @@ export function AdminWorkspace() {
               }
             : season
         )
+      };
+    });
+    setSaveState("idle");
+  }
+
+  function updateMatchReplayCode(matchId: string, replayIndex: number, nextValue: string) {
+    setDraftLeague((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        matches: current.matches.map((match) => {
+          if (match.id !== matchId) {
+            return match;
+          }
+
+          const replayCodes = normalizeReplayCodes(match.replayCodes, match.result);
+          replayCodes[replayIndex] = nextValue;
+
+          return {
+            ...match,
+            replayCodes
+          };
+        })
       };
     });
     setSaveState("idle");
@@ -1112,6 +1157,8 @@ export function AdminWorkspace() {
                     const teamA = draftLeague.teams.find((team) => team.id === match.teamAId)?.name ?? match.teamAId;
                     const teamB = draftLeague.teams.find((team) => team.id === match.teamBId)?.name ?? match.teamBId;
                     const activeResult = stringifyResult(match.result);
+                    const replayCodeCount = getReplayCodeCount(match.result);
+                    const replayCodes = normalizeReplayCodes(match.replayCodes, match.result);
 
                     return (
                       <div
@@ -1167,6 +1214,33 @@ export function AdminWorkspace() {
                             </button>
                           </div>
                         </div>
+
+                        {replayCodeCount > 0 ? (
+                          <div className="mt-4 rounded-[20px] border border-slate-200 bg-slate-50/80 px-4 py-4">
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                              <p className="text-sm font-semibold text-slate-900">리플레이 코드</p>
+                              <span className="text-xs text-slate-500">{replayCodeCount}개 맵</span>
+                            </div>
+                            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                              {replayCodes.map((replayCode, replayIndex) => (
+                                <label
+                                  key={`${match.id}-replay-${replayIndex + 1}`}
+                                  className="space-y-2 text-sm text-slate-600"
+                                >
+                                  <span>맵 {replayIndex + 1}</span>
+                                  <input
+                                    value={replayCode}
+                                    onChange={(event) =>
+                                      updateMatchReplayCode(match.id, replayIndex, event.target.value)
+                                    }
+                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3"
+                                    placeholder={`리플레이 코드 ${replayIndex + 1}`}
+                                  />
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     );
                   })}

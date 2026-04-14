@@ -181,6 +181,10 @@ function formatImpactDelta(delta: number, metric: ImpactMetric) {
   return `${sign}${formatDecimal(delta, 1)}%p`;
 }
 
+function getReplayCodesForDisplay(replayCodes: string[] | undefined): string[] {
+  return (replayCodes ?? []).map((code) => code.trim()).filter(Boolean);
+}
+
 export function SeasonDetail({
   league,
   baselineLeague,
@@ -664,6 +668,54 @@ export function SeasonDetail({
                 />
                 <StatCard label="상태" value={getSeasonStatusLabel(season.status)} />
               </div>
+            </Panel>
+
+            <Panel title="완료 경기 리플레이" description="완료된 경기의 세트 스코어와 리플레이 코드를 확인합니다.">
+              {insight.completedMatches.length === 0 ? (
+                <p className="text-sm text-slate-500">아직 완료된 경기가 없습니다.</p>
+              ) : (
+                <div className="space-y-3">
+                  {insight.completedMatches
+                    .slice()
+                    .sort((left, right) => left.scheduledAt.localeCompare(right.scheduledAt))
+                    .map((match) => {
+                      const replayCodes = getReplayCodesForDisplay(match.replayCodes);
+
+                      return (
+                        <div key={match.id} className="rounded-2xl bg-slate-50 px-4 py-4">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <p className="font-semibold text-ink">
+                                {teamMap[match.teamAId] ?? match.teamAId} vs {teamMap[match.teamBId] ?? match.teamBId}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-500">{formatDateTimeLabel(match.scheduledAt)}</p>
+                            </div>
+                            <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-slate-700">
+                              {match.result ? `${match.result.setsA}:${match.result.setsB}` : "-"}
+                            </span>
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {replayCodes.length > 0 ? (
+                              replayCodes.map((replayCode, replayIndex) => (
+                                <span
+                                  key={`${match.id}-archive-replay-${replayIndex + 1}`}
+                                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700"
+                                >
+                                  맵 {replayIndex + 1} · {replayCode}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="rounded-full border border-dashed border-slate-300 bg-white/80 px-3 py-1.5 text-xs text-slate-500">
+                                리플레이 코드 없음
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
             </Panel>
           </div>
 

@@ -247,6 +247,24 @@ function getMatchLabel(league: League, seasonId: string, teamAId: string, teamBI
   return `${teamMap[teamAId] ?? teamAId} vs ${teamMap[teamBId] ?? teamBId}`;
 }
 
+function getReplayCodeCount(result: MatchResult | null | undefined): number {
+  if (!result) {
+    return 0;
+  }
+
+  return result.setsA + result.setsB;
+}
+
+function normalizeReplayCodes(replayCodes: string[] | undefined, result: MatchResult | null | undefined): string[] {
+  const targetLength = getReplayCodeCount(result);
+
+  if (targetLength === 0) {
+    return [];
+  }
+
+  return Array.from({ length: targetLength }, (_, index) => replayCodes?.[index] ?? "");
+}
+
 function areStringArraysEqual(left: string[], right: string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
@@ -720,7 +738,8 @@ export const useLeagueStore = create<LeagueStoreState>()(
                 teamBId,
                 scheduledAt,
                 played: false,
-                result: null
+                result: null,
+                replayCodes: []
               }
             ]
           };

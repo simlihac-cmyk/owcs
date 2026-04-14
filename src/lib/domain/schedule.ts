@@ -59,7 +59,8 @@ export function generateRoundRobinMatches(
           teamBId: swapSides ? teamAId : teamBId,
           scheduledAt: scheduledAt.toISOString(),
           played: false,
-          result: null
+          result: null,
+          replayCodes: []
         });
       });
     });
@@ -114,7 +115,8 @@ export function regenerateSeasonSchedule(params: {
       ...match,
       id: preserved.id,
       played: preserved.played,
-      result: preserved.result
+      result: preserved.result,
+      replayCodes: preserved.replayCodes ?? []
     };
   });
 }

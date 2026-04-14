@@ -60,6 +60,7 @@ export interface Match {
   scheduledAt: string;
   played: boolean;
   result?: MatchResult | null;
+  replayCodes?: string[];
 }
 
 export interface CurrentSeasonRecord {
