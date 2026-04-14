@@ -90,8 +90,8 @@ function getLcqRankRange(teamCount: number, qualifierCount: number, lcqQualifier
     return null;
   }
 
-  const start = qualifierCount + 1;
-  const end = Math.min(teamCount, start + lcqQualifierCount - 1);
+  const start = 1;
+  const end = Math.min(teamCount, lcqQualifierCount);
 
   if (start > teamCount || start > end) {
     return null;
@@ -350,7 +350,7 @@ export function SeasonDetail({
             />
             <Panel
               title="확률 카드"
-              description="지표를 눌러 시드 결정전 진출, 1위, 예상 최종 순위를 카드형으로 비교합니다."
+                  description="지표를 눌러 시드 결정전, LCQ, 1위, 예상 최종 순위를 카드형으로 비교합니다."
             >
               <div className="mb-4 flex flex-wrap gap-2">
                 {summaryMetricOptions.map((option) => (
