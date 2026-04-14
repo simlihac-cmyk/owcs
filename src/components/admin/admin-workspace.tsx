@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { League, RoundRobinType, Season, SeasonStatus } from "@/lib/types";
+import { RESULT_OPTIONS } from "@/lib/constants";
+import { formatDateTimeLabel } from "@/lib/utils/format";
+import { League, MatchResult, RoundRobinType, Season, SeasonStatus } from "@/lib/types";
 
 interface AdminLeagueResponse {
   league: League;
@@ -41,6 +43,35 @@ function getSeasonMatchCounts(league: League, seasonId: string) {
     total: matches.length,
     played: matches.filter((match) => match.played && match.result).length
   };
+}
+
+function stringifyResult(result?: MatchResult | null): string {
+  if (!result) {
+    return "";
+  }
+
+  return `${result.setsA}:${result.setsB}`;
+}
+
+function parseResult(value: string): MatchResult | null {
+  if (!value) {
+    return null;
+  }
+
+  const [setsA, setsB] = value.split(":").map(Number);
+  return { setsA, setsB };
+}
+
+function deriveSeasonStatus(matchesCount: number, playedCount: number): SeasonStatus {
+  if (matchesCount > 0 && playedCount === matchesCount) {
+    return "completed";
+  }
+
+  if (playedCount > 0) {
+    return "ongoing";
+  }
+
+  return "draft";
 }
 
 export function AdminWorkspace() {
@@ -162,6 +193,41 @@ export function AdminWorkspace() {
     setSaveState("idle");
   }
 
+  function updateMatchResult(matchId: string, result: MatchResult | null) {
+    setDraftLeague((current) => {
+      if (!current || !selectedSeason) {
+        return current;
+      }
+
+      const nextMatches = current.matches.map((match) =>
+        match.id === matchId
+          ? {
+              ...match,
+              played: Boolean(result),
+              result
+            }
+          : match
+      );
+      const seasonMatches = nextMatches.filter((match) => match.seasonId === selectedSeason.id);
+      const playedCount = seasonMatches.filter((match) => match.played && match.result).length;
+
+      return {
+        ...current,
+        matches: nextMatches,
+        seasons: current.seasons.map((season) =>
+          season.id === selectedSeason.id
+            ? {
+                ...season,
+                status: deriveSeasonStatus(seasonMatches.length, playedCount),
+                updatedAt: new Date().toISOString()
+              }
+            : season
+        )
+      };
+    });
+    setSaveState("idle");
+  }
+
   async function handleSave() {
     if (!draftLeague) {
       return;
@@ -222,6 +288,9 @@ export function AdminWorkspace() {
   const currentTeams = selectedSeason.teamIds
     .map((teamId) => draftLeague.teams.find((team) => team.id === teamId))
     .filter((team): team is NonNullable<typeof team> => Boolean(team));
+  const selectedSeasonMatches = draftLeague.matches
+    .filter((match) => match.seasonId === selectedSeason.id)
+    .sort((left, right) => left.scheduledAt.localeCompare(right.scheduledAt));
   const matchCounts = getSeasonMatchCounts(draftLeague, selectedSeason.id);
 
   return (
@@ -627,6 +696,91 @@ export function AdminWorkspace() {
                   </ul>
                 </div>
               </div>
+            </div>
+
+            <div className="ow-panel-light rounded-[28px] px-5 py-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">경기 결과 관리</h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    운영 원본 기준으로 경기 결과를 직접 입력하거나 되돌릴 수 있습니다.
+                  </p>
+                </div>
+                <div className="rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-slate-600">
+                  완료 {matchCounts.played} / 전체 {matchCounts.total}
+                </div>
+              </div>
+
+              {selectedSeasonMatches.length === 0 ? (
+                <div className="mt-4 rounded-[24px] border border-dashed border-slate-300 bg-white/70 px-5 py-8 text-center text-sm text-slate-500">
+                  이 시즌에는 등록된 경기가 없습니다.
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {selectedSeasonMatches.map((match) => {
+                    const teamA = draftLeague.teams.find((team) => team.id === match.teamAId)?.name ?? match.teamAId;
+                    const teamB = draftLeague.teams.find((team) => team.id === match.teamBId)?.name ?? match.teamBId;
+                    const activeResult = stringifyResult(match.result);
+
+                    return (
+                      <div
+                        key={match.id}
+                        className="rounded-[24px] border border-slate-200 bg-white/80 px-4 py-4"
+                      >
+                        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <strong className="text-base text-slate-900">
+                                {teamA} vs {teamB}
+                              </strong>
+                              <span
+                                className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                  match.result
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : "bg-slate-100 text-slate-500"
+                                }`}
+                              >
+                                {match.result ? `기록됨 ${activeResult}` : "미기록"}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-sm text-slate-500">
+                              일정: {formatDateTimeLabel(match.scheduledAt)}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            {RESULT_OPTIONS.map((option) => {
+                              const isActive = activeResult === option;
+
+                              return (
+                                <button
+                                  key={option}
+                                  type="button"
+                                  onClick={() => updateMatchResult(match.id, parseResult(option))}
+                                  className={`rounded-full px-3 py-2 text-sm font-semibold transition ${
+                                    isActive
+                                      ? "bg-[linear-gradient(135deg,#ffbf69,#f28b2f)] text-[#101722] shadow-[0_8px_24px_rgba(242,139,47,0.28)]"
+                                      : "border border-slate-200 bg-white text-slate-600 hover:border-[#f28b2f] hover:text-[#c86c1d]"
+                                  }`}
+                                >
+                                  {option}
+                                </button>
+                              );
+                            })}
+                            <button
+                              type="button"
+                              onClick={() => updateMatchResult(match.id, null)}
+                              className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                            >
+                              결과 지우기
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </main>
         </section>
