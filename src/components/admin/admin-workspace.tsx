@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RESULT_OPTIONS } from "@/lib/constants";
+import { DEFAULT_LEAGUE_RULES, DEFAULT_SIMULATION_CONFIG, RESULT_OPTIONS } from "@/lib/constants";
+import { createSeasonShell, createTeamsFromNames, generateRoundRobinMatches } from "@/lib/domain/schedule";
 import { formatDateTimeLabel } from "@/lib/utils/format";
-import { League, MatchResult, RoundRobinType, Season, SeasonStatus } from "@/lib/types";
+import { League, MatchResult, RoundRobinType, Season, SeasonStatus, Team } from "@/lib/types";
 
 interface AdminLeagueResponse {
   league: League;
@@ -14,6 +15,19 @@ interface AdminLeagueResponse {
 }
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+
+interface CreateSeasonFormState {
+  name: string;
+  year: number;
+  order: number;
+  teamText: string;
+  priorSeasonId: string;
+  qualifierCount: number;
+  lcqQualifierCount: number;
+  roundRobinType: RoundRobinType;
+  iterations: number;
+  decimalPlaces: number;
+}
 
 function sortSeasons(seasons: Season[]): Season[] {
   return [...seasons].sort((left, right) => right.order - left.order);
@@ -74,6 +88,61 @@ function deriveSeasonStatus(matchesCount: number, playedCount: number): SeasonSt
   return "draft";
 }
 
+function dedupeTeamNames(teamNames: string[]): string[] {
+  return Array.from(
+    new Set(
+      teamNames
+        .map((name) => name.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+function resolveTeamPool(league: League, teamNames: string[]) {
+  const normalizedMap = new Map(league.teams.map((team) => [team.name.toLowerCase(), team]));
+  const newTeams: Team[] = [];
+  const teamIds = dedupeTeamNames(teamNames).map((teamName) => {
+    const existing = normalizedMap.get(teamName.toLowerCase());
+
+    if (existing) {
+      return existing.id;
+    }
+
+    const nextTeam = createTeamsFromNames([teamName])[0];
+    newTeams.push(nextTeam);
+    normalizedMap.set(teamName.toLowerCase(), nextTeam);
+    return nextTeam.id;
+  });
+
+  return { teamIds, newTeams };
+}
+
+function getLatestSeason(league: League): Season | null {
+  return sortSeasons(league.seasons)[0] ?? null;
+}
+
+function buildCreateSeasonFormState(league: League): CreateSeasonFormState {
+  const latestSeason = getLatestSeason(league);
+
+  return {
+    name: latestSeason ? `${latestSeason.year} 새 스테이지` : "2026 새 스테이지",
+    year: latestSeason?.year ?? 2026,
+    order: latestSeason ? latestSeason.order + 1 : 1,
+    teamText: latestSeason
+      ? latestSeason.teamIds
+          .map((teamId) => league.teams.find((team) => team.id === teamId)?.name ?? "")
+          .filter(Boolean)
+          .join("\n")
+      : "",
+    priorSeasonId: latestSeason?.id ?? "",
+    qualifierCount: latestSeason?.rules.qualifierCount ?? DEFAULT_LEAGUE_RULES.qualifierCount,
+    lcqQualifierCount: latestSeason?.rules.lcqQualifierCount ?? DEFAULT_LEAGUE_RULES.lcqQualifierCount,
+    roundRobinType: latestSeason?.rules.roundRobinType ?? DEFAULT_LEAGUE_RULES.roundRobinType,
+    iterations: latestSeason?.simulationConfig.iterations ?? DEFAULT_SIMULATION_CONFIG.iterations,
+    decimalPlaces: latestSeason?.simulationConfig.decimalPlaces ?? DEFAULT_SIMULATION_CONFIG.decimalPlaces
+  };
+}
+
 export function AdminWorkspace() {
   const [serverLeague, setServerLeague] = useState<League | null>(null);
   const [draftLeague, setDraftLeague] = useState<League | null>(null);
@@ -85,6 +154,8 @@ export function AdminWorkspace() {
   const [error, setError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [statusMessage, setStatusMessage] = useState("관리자 원본 데이터를 불러오는 중입니다.");
+  const [showCreateSeasonForm, setShowCreateSeasonForm] = useState(false);
+  const [createSeasonForm, setCreateSeasonForm] = useState<CreateSeasonFormState | null>(null);
 
   const orderedSeasons = useMemo(
     () => (draftLeague ? sortSeasons(draftLeague.seasons) : []),
@@ -129,6 +200,7 @@ export function AdminWorkspace() {
       setFilePath(payload.filePath);
       setUpdatedAt(payload.updatedAt);
       setSaveState("idle");
+      setCreateSeasonForm(buildCreateSeasonFormState(payload.league));
       setStatusMessage(
         payload.source === "file"
           ? "파일 기반 관리자 원본을 불러왔습니다."
@@ -226,6 +298,142 @@ export function AdminWorkspace() {
       };
     });
     setSaveState("idle");
+  }
+
+  function updateCreateSeasonForm<Key extends keyof CreateSeasonFormState>(
+    key: Key,
+    value: CreateSeasonFormState[Key]
+  ) {
+    setCreateSeasonForm((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [key]: value
+      };
+    });
+  }
+
+  function handleCreateSeason() {
+    if (!draftLeague || !createSeasonForm) {
+      return;
+    }
+
+    const teamNames = createSeasonForm.teamText.split(/[\n,]+/);
+    const { teamIds, newTeams } = resolveTeamPool(draftLeague, teamNames);
+
+    if (teamIds.length < 2) {
+      setError("새 시즌에는 최소 2개 이상의 팀이 필요합니다.");
+      setStatusMessage("새 시즌에는 최소 2개 이상의 팀이 필요합니다.");
+      return;
+    }
+
+    const shell = createSeasonShell({
+      leagueId: draftLeague.id,
+      name: createSeasonForm.name.trim() || "새 시즌",
+      year: createSeasonForm.year,
+      order: createSeasonForm.order,
+      teamIds,
+      priorSeasonId: createSeasonForm.priorSeasonId || null
+    });
+
+    const nextSeason: Season = {
+      ...shell.season,
+      name: createSeasonForm.name.trim() || shell.season.name,
+      year: createSeasonForm.year,
+      order: createSeasonForm.order,
+      priorSeasonId: createSeasonForm.priorSeasonId || null,
+      rules: {
+        ...shell.season.rules,
+        qualifierCount: createSeasonForm.qualifierCount,
+        lcqQualifierCount: createSeasonForm.lcqQualifierCount,
+        roundRobinType: createSeasonForm.roundRobinType
+      },
+      simulationConfig: {
+        ...shell.season.simulationConfig,
+        iterations: createSeasonForm.iterations,
+        decimalPlaces: createSeasonForm.decimalPlaces
+      }
+    };
+
+    const nextLeague: League = {
+      ...draftLeague,
+      teams: [...draftLeague.teams, ...newTeams],
+      seasons: [...draftLeague.seasons, nextSeason].sort((left, right) => left.order - right.order),
+      seasonTeams: [
+        ...draftLeague.seasonTeams.filter((item) => item.seasonId !== nextSeason.id),
+        ...teamIds.map((teamId) => ({
+          seasonId: nextSeason.id,
+          teamId,
+          manualInitialRating: null
+        }))
+      ],
+      matches: [
+        ...draftLeague.matches,
+        ...generateRoundRobinMatches(
+          nextSeason.id,
+          teamIds,
+          createSeasonForm.roundRobinType,
+          nextSeason.createdAt
+        )
+      ]
+    };
+
+    setDraftLeague(nextLeague);
+    setSelectedSeasonId(nextSeason.id);
+    setCreateSeasonForm(buildCreateSeasonFormState(nextLeague));
+    setShowCreateSeasonForm(false);
+    setError(null);
+    setSaveState("idle");
+    setStatusMessage(`"${nextSeason.name}" 시즌 초안을 만들었습니다. 원본 저장을 눌러 반영하세요.`);
+  }
+
+  function handleDeleteSeason() {
+    if (!draftLeague || !selectedSeason) {
+      return;
+    }
+
+    if (draftLeague.seasons.length <= 1) {
+      setError("마지막 시즌은 삭제할 수 없습니다.");
+      setStatusMessage("마지막 시즌은 삭제할 수 없습니다.");
+      return;
+    }
+
+    const shouldDelete = window.confirm(
+      `"${selectedSeason.name}" 시즌을 삭제할까요? 연결된 경기와 시즌팀 데이터도 함께 삭제됩니다.`
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    const remainingSeasons = draftLeague.seasons
+      .filter((season) => season.id !== selectedSeason.id)
+      .map((season) =>
+        season.priorSeasonId === selectedSeason.id
+          ? {
+              ...season,
+              priorSeasonId: null,
+              updatedAt: new Date().toISOString()
+            }
+          : season
+      );
+    const nextLeague: League = {
+      ...draftLeague,
+      seasons: remainingSeasons,
+      seasonTeams: draftLeague.seasonTeams.filter((item) => item.seasonId !== selectedSeason.id),
+      matches: draftLeague.matches.filter((match) => match.seasonId !== selectedSeason.id)
+    };
+    const nextSelectedSeason = sortSeasons(remainingSeasons)[0] ?? null;
+
+    setDraftLeague(nextLeague);
+    setSelectedSeasonId(nextSelectedSeason?.id ?? null);
+    setCreateSeasonForm(buildCreateSeasonFormState(nextLeague));
+    setError(null);
+    setSaveState("idle");
+    setStatusMessage(`"${selectedSeason.name}" 시즌을 삭제했습니다. 원본 저장을 눌러 반영하세요.`);
   }
 
   async function handleSave() {
@@ -408,6 +616,16 @@ export function AdminWorkspace() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateSeasonForm((current) => !current);
+                      setCreateSeasonForm(buildCreateSeasonFormState(draftLeague));
+                    }}
+                    className="ow-ghost-button rounded-full px-4 py-2 text-sm font-medium"
+                  >
+                    {showCreateSeasonForm ? "시즌 생성 닫기" : "새 시즌 만들기"}
+                  </button>
                   <span
                     className={`rounded-full px-3 py-2 text-xs font-semibold ${
                       isDirty ? "ow-status-ready" : "ow-status-done"
@@ -415,6 +633,14 @@ export function AdminWorkspace() {
                   >
                     {isDirty ? "저장되지 않은 변경사항 있음" : "원본과 동기화됨"}
                   </span>
+                  <button
+                    type="button"
+                    onClick={handleDeleteSeason}
+                    disabled={draftLeague.seasons.length <= 1}
+                    className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    선택 시즌 삭제
+                  </button>
                   <button
                     type="button"
                     onClick={() => setDraftLeague(serverLeague)}
@@ -438,6 +664,171 @@ export function AdminWorkspace() {
                 {statusMessage}
               </p>
             </div>
+
+            {showCreateSeasonForm && createSeasonForm ? (
+              <div className="ow-panel-light rounded-[28px] px-5 py-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">새 시즌 만들기</h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      관리자 원본에 새 시즌 초안을 추가합니다. 저장 전까지는 현재 draft에만 반영됩니다.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateSeasonForm(false);
+                      setCreateSeasonForm(buildCreateSeasonFormState(draftLeague));
+                    }}
+                    className="ow-ghost-button rounded-full px-4 py-2 text-sm font-medium"
+                  >
+                    닫기
+                  </button>
+                </div>
+
+                <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                  <label className="space-y-2 text-sm text-slate-600">
+                    <span>시즌명</span>
+                    <input
+                      value={createSeasonForm.name}
+                      onChange={(event) => updateCreateSeasonForm("name", event.target.value)}
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                    />
+                  </label>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="space-y-2 text-sm text-slate-600">
+                      <span>연도</span>
+                      <input
+                        type="number"
+                        value={createSeasonForm.year}
+                        onChange={(event) => updateCreateSeasonForm("year", Number(event.target.value))}
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                      />
+                    </label>
+                    <label className="space-y-2 text-sm text-slate-600">
+                      <span>표시 순서</span>
+                      <input
+                        type="number"
+                        value={createSeasonForm.order}
+                        onChange={(event) => updateCreateSeasonForm("order", Number(event.target.value))}
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                  <label className="space-y-2 text-sm text-slate-600">
+                    <span>참가 팀 목록</span>
+                    <textarea
+                      rows={8}
+                      value={createSeasonForm.teamText}
+                      onChange={(event) => updateCreateSeasonForm("teamText", event.target.value)}
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                      placeholder="한 줄에 한 팀씩 입력하거나 쉼표로 구분해 주세요."
+                    />
+                  </label>
+
+                  <div className="grid gap-4">
+                    <label className="space-y-2 text-sm text-slate-600">
+                      <span>이전 시즌 기준</span>
+                      <select
+                        value={createSeasonForm.priorSeasonId}
+                        onChange={(event) => updateCreateSeasonForm("priorSeasonId", event.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                      >
+                        <option value="">없음</option>
+                        {orderedSeasons.map((season) => (
+                          <option key={season.id} value={season.id}>
+                            {season.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className="space-y-2 text-sm text-slate-600">
+                        <span>시드 결정전 진출 팀 수</span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={createSeasonForm.qualifierCount}
+                          onChange={(event) =>
+                            updateCreateSeasonForm("qualifierCount", Number(event.target.value))
+                          }
+                          className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                        />
+                      </label>
+                      <label className="space-y-2 text-sm text-slate-600">
+                        <span>LCQ 진출 팀 수</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={createSeasonForm.lcqQualifierCount}
+                          onChange={(event) =>
+                            updateCreateSeasonForm("lcqQualifierCount", Number(event.target.value))
+                          }
+                          className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <label className="space-y-2 text-sm text-slate-600">
+                        <span>라운드로빈 방식</span>
+                        <select
+                          value={createSeasonForm.roundRobinType}
+                          onChange={(event) =>
+                            updateCreateSeasonForm(
+                              "roundRobinType",
+                              event.target.value as RoundRobinType
+                            )
+                          }
+                          className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                        >
+                          <option value="single">single</option>
+                          <option value="double">double</option>
+                        </select>
+                      </label>
+                      <label className="space-y-2 text-sm text-slate-600">
+                        <span>시뮬레이션 횟수</span>
+                        <input
+                          type="number"
+                          min={500}
+                          step={500}
+                          value={createSeasonForm.iterations}
+                          onChange={(event) => updateCreateSeasonForm("iterations", Number(event.target.value))}
+                          className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                        />
+                      </label>
+                      <label className="space-y-2 text-sm text-slate-600">
+                        <span>소수점 자리수</span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={4}
+                          value={createSeasonForm.decimalPlaces}
+                          onChange={(event) =>
+                            updateCreateSeasonForm("decimalPlaces", Number(event.target.value))
+                          }
+                          className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleCreateSeason}
+                    className="ow-primary-button rounded-full px-5 py-2.5 text-sm font-semibold"
+                  >
+                    시즌 초안 추가
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="ow-panel-light rounded-[28px] px-5 py-5">
