@@ -1,14 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SeasonArchiveList } from "@/components/season-archive-list";
 import { SeasonDetail } from "@/components/season-detail";
 import { applyPredictionOverrides } from "@/lib/domain/predictions";
 import { useSeasonInsight } from "@/lib/use-season-insight";
 import { getSelectedSeason, useLeagueStore } from "@/lib/store/league-store";
-import { MatchResult } from "@/lib/types";
+import { League, MatchResult } from "@/lib/types";
 
-export function LeagueWorkspace() {
+interface LeagueWorkspaceProps {
+  sourceLeague: League;
+}
+
+export function LeagueWorkspace({ sourceLeague }: LeagueWorkspaceProps) {
   const hydrated = useLeagueStore((state) => state.hydrated);
   const league = useLeagueStore((state) => state.league);
   const baselineLeague = useLeagueStore((state) => state.baselineLeague);
@@ -17,8 +21,11 @@ export function LeagueWorkspace() {
   const revision = useLeagueStore((state) => state.revision);
   const selectSeason = useLeagueStore((state) => state.selectSeason);
   const replaceWithBundledSample = useLeagueStore((state) => state.replaceWithBundledSample);
+  const syncWithSourceLeague = useLeagueStore((state) => state.syncWithSourceLeague);
   const updateSeasonSettings = useLeagueStore((state) => state.updateSeasonSettings);
   const updateMatchResult = useLeagueStore((state) => state.updateMatchResult);
+  const [readySourceFingerprint, setReadySourceFingerprint] = useState<string | null>(null);
+  const sourceFingerprint = useMemo(() => JSON.stringify(sourceLeague), [sourceLeague]);
   const selectedSeason = getSelectedSeason(league, selectedSeasonId);
   const displayLeague = useMemo(
     () => applyPredictionOverrides(league, predictionOverrides),
@@ -31,10 +38,19 @@ export function LeagueWorkspace() {
     revision
   );
 
-  if (!hydrated) {
+  useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+
+    syncWithSourceLeague(sourceLeague);
+    setReadySourceFingerprint(sourceFingerprint);
+  }, [hydrated, sourceFingerprint, sourceLeague, syncWithSourceLeague]);
+
+  if (!hydrated || readySourceFingerprint !== sourceFingerprint) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--ow-bg)] text-slate-600">
-        저장된 데이터를 불러오는 중입니다.
+        현재 기준 데이터를 불러오는 중입니다.
       </div>
     );
   }

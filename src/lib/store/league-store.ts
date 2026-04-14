@@ -59,6 +59,7 @@ interface LeagueStoreState {
   revision: number;
   markHydrated: () => void;
   selectSeason: (seasonId: string) => void;
+  syncWithSourceLeague: (league: League) => void;
   replaceWithBundledSample: () => void;
   undoLastChange: () => void;
   saveScenarioSnapshot: (name?: string) => void;
@@ -166,6 +167,10 @@ function cloneLeague(league: League): League {
   return JSON.parse(JSON.stringify(league)) as League;
 }
 
+function normalizeIncomingLeague(league: League): League {
+  return normalizeLeague(cloneLeague(league));
+}
+
 function getLegacyLcqQualifierCount(teamCount: number, qualifierCount: number): number {
   return Math.max(teamCount - qualifierCount - 1, 0);
 }
@@ -246,7 +251,7 @@ function areStringArraysEqual(left: string[], right: string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
-const initialLeague = normalizeLeague(loadSampleLeague());
+const initialLeague = normalizeIncomingLeague(loadSampleLeague());
 export const STORE_VERSION = 3;
 export const SAMPLE_DATA_VERSION = 2;
 
@@ -304,9 +309,9 @@ function refreshBundledSampleIfEligible(
 export function migratePersistedLeagueStore(
   persistedState: PersistedLeagueStoreState | undefined
 ): PersistedLeagueStoreState {
-  const normalizedLeague = normalizeLeague(cloneLeague(persistedState?.league ?? initialLeague));
-  const normalizedBaselineLeague = normalizeLeague(
-    cloneLeague(persistedState?.baselineLeague ?? persistedState?.league ?? initialLeague)
+  const normalizedLeague = normalizeIncomingLeague(persistedState?.league ?? initialLeague);
+  const normalizedBaselineLeague = normalizeIncomingLeague(
+    persistedState?.baselineLeague ?? persistedState?.league ?? initialLeague
   );
   const refreshed = refreshBundledSampleIfEligible(
     normalizedLeague,
@@ -359,13 +364,58 @@ export const useLeagueStore = create<LeagueStoreState>()(
       revision: 0,
       markHydrated: () => set({ hydrated: true }),
       selectSeason: (seasonId) => set({ selectedSeasonId: seasonId }),
+      syncWithSourceLeague: (sourceLeague) =>
+        set((state) => {
+          const normalizedSourceLeague = normalizeIncomingLeague(sourceLeague);
+
+          if (areLeaguesEquivalent(normalizedSourceLeague, state.baselineLeague)) {
+            return state;
+          }
+
+          const workspaceMatchesBaseline = areLeaguesEquivalent(state.league, state.baselineLeague);
+          const nextSelectedSeasonId = state.selectedSeasonId
+            ? state.league.seasons.some((season) => season.id === state.selectedSeasonId)
+              ? state.selectedSeasonId
+              : getDefaultSelectedSeasonId(state.league)
+            : getDefaultSelectedSeasonId(state.league);
+
+          if (workspaceMatchesBaseline) {
+            return {
+              league: cloneLeague(normalizedSourceLeague),
+              baselineLeague: cloneLeague(normalizedSourceLeague),
+              sampleDataVersion: SAMPLE_DATA_VERSION,
+              usesBundledSample: true,
+              selectedSeasonId:
+                state.selectedSeasonId &&
+                normalizedSourceLeague.seasons.some((season) => season.id === state.selectedSeasonId)
+                  ? state.selectedSeasonId
+                  : getDefaultSelectedSeasonId(normalizedSourceLeague),
+              changeLog: appendChangeLog(
+                state.changeLog,
+                "관리자 기준 데이터가 갱신되어 최신 상태로 동기화했습니다."
+              ),
+              revision: state.revision + 1
+            };
+          }
+
+          return {
+            baselineLeague: cloneLeague(normalizedSourceLeague),
+            sampleDataVersion: SAMPLE_DATA_VERSION,
+            usesBundledSample: false,
+            selectedSeasonId: nextSelectedSeasonId,
+            changeLog: appendChangeLog(
+              state.changeLog,
+              "관리자 기준 데이터가 갱신되었습니다. 초기화 버튼으로 최신 기준 상태를 불러올 수 있습니다."
+            ),
+            revision: state.revision + 1
+          };
+        }),
       replaceWithBundledSample: () =>
         set((state) => {
-          const league = normalizeLeague(loadSampleLeague());
+          const league = cloneLeague(state.baselineLeague);
 
           return {
             league,
-            baselineLeague: cloneLeague(league),
             sampleDataVersion: SAMPLE_DATA_VERSION,
             usesBundledSample: true,
             predictionOverrides: {},
@@ -373,7 +423,7 @@ export const useLeagueStore = create<LeagueStoreState>()(
             scenarioSnapshots: [],
             undoStack: appendUndoSnapshot(state, "최신 예시 데이터 불러오기"),
             changeLog: [
-              makeChangeLogEntry("최신 예시 데이터로 작업 공간을 교체했습니다."),
+              makeChangeLogEntry("현재 기준 데이터로 작업 공간을 초기화했습니다."),
               ...state.changeLog
             ].slice(0, 24),
             revision: state.revision + 1
@@ -765,8 +815,8 @@ export const useLeagueStore = create<LeagueStoreState>()(
         }
 
         const migrated = migratePersistedLeagueStore(state);
-        state.league = migrated.league ?? normalizeLeague(cloneLeague(initialLeague));
-        state.baselineLeague = migrated.baselineLeague ?? normalizeLeague(cloneLeague(initialLeague));
+        state.league = migrated.league ?? normalizeIncomingLeague(initialLeague);
+        state.baselineLeague = migrated.baselineLeague ?? normalizeIncomingLeague(initialLeague);
         state.sampleDataVersion = migrated.sampleDataVersion ?? SAMPLE_DATA_VERSION;
         state.usesBundledSample = migrated.usesBundledSample ?? false;
         state.predictionOverrides = migrated.predictionOverrides ?? {};
