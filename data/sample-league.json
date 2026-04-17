@@ -489,6 +489,150 @@
       "shortName": "Match 4 Winner",
       "primaryRegion": "korea",
       "country": "대한민국"
+    },
+    {
+      "id": "team_slot_2026_asia_stage1_kor_1",
+      "name": "코리아 플레이오프 1위",
+      "shortName": "KOR #1",
+      "country": null,
+      "primaryRegion": "korea",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_asia_stage1_kor_2",
+      "name": "코리아 플레이오프 2위",
+      "shortName": "KOR #2",
+      "country": null,
+      "primaryRegion": "korea",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_asia_stage1_kor_3",
+      "name": "코리아 플레이오프 3위",
+      "shortName": "KOR #3",
+      "country": null,
+      "primaryRegion": "korea",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_asia_stage1_kor_4",
+      "name": "코리아 플레이오프 4위",
+      "shortName": "KOR #4",
+      "country": null,
+      "primaryRegion": "korea",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_asia_stage1_jpn_1",
+      "name": "일본 1위",
+      "shortName": "JPN #1",
+      "country": null,
+      "primaryRegion": "japan",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_asia_stage1_jpn_2",
+      "name": "일본 2위",
+      "shortName": "JPN #2",
+      "country": null,
+      "primaryRegion": "japan",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_asia_stage1_jpn_3",
+      "name": "일본 3위",
+      "shortName": "JPN #3",
+      "country": null,
+      "primaryRegion": "japan",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_asia_stage1_pac_1",
+      "name": "퍼시픽 1위",
+      "shortName": "PAC #1",
+      "country": null,
+      "primaryRegion": "pacific",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_champions_clash_asia_1",
+      "name": "아시아 1시드",
+      "shortName": "ASIA #1",
+      "country": null,
+      "primaryRegion": "asia",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_champions_clash_asia_2",
+      "name": "아시아 2시드",
+      "shortName": "ASIA #2",
+      "country": null,
+      "primaryRegion": "asia",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_champions_clash_china_1",
+      "name": "중국 1위",
+      "shortName": "CN #1",
+      "country": null,
+      "primaryRegion": "international",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_champions_clash_china_2",
+      "name": "중국 2위",
+      "shortName": "CN #2",
+      "country": null,
+      "primaryRegion": "international",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_champions_clash_emea_1",
+      "name": "EMEA 1위",
+      "shortName": "EMEA #1",
+      "country": null,
+      "primaryRegion": "international",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_champions_clash_emea_2",
+      "name": "EMEA 2위",
+      "shortName": "EMEA #2",
+      "country": null,
+      "primaryRegion": "international",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_champions_clash_na_1",
+      "name": "북미 1위",
+      "shortName": "NA #1",
+      "country": null,
+      "primaryRegion": "international",
+      "aliases": [],
+      "logoPath": null
+    },
+    {
+      "id": "team_slot_2026_champions_clash_na_2",
+      "name": "북미 2위",
+      "shortName": "NA #2",
+      "country": null,
+      "primaryRegion": "international",
+      "aliases": [],
+      "logoPath": null
     }
   ],
   "seasons": [
@@ -1290,7 +1434,9 @@
       "category": "subregion",
       "region": "korea",
       "parentSeasonId": "season_2026_stage1",
-      "qualificationTargetSeasonIds": [],
+      "qualificationTargetSeasonIds": [
+        "season_2026_asia_stage1"
+      ],
       "tournamentConfig": {
         "bracketType": "hybrid",
         "defaultFirstTo": 3,
@@ -1371,6 +1517,170 @@
         "priorWeightDecay": 0.45,
         "decimalPlaces": 1
       }
+    },
+    {
+      "id": "season_2026_asia_stage1",
+      "leagueId": "league_owcs_korea",
+      "name": "2026 아시아 스테이지 1",
+      "year": 2026,
+      "order": 41,
+      "teamIds": [
+        "team_slot_2026_asia_stage1_kor_1",
+        "team_slot_2026_asia_stage1_kor_2",
+        "team_slot_2026_asia_stage1_kor_3",
+        "team_slot_2026_asia_stage1_kor_4",
+        "team_slot_2026_asia_stage1_jpn_1",
+        "team_slot_2026_asia_stage1_jpn_2",
+        "team_slot_2026_asia_stage1_jpn_3",
+        "team_slot_2026_asia_stage1_pac_1"
+      ],
+      "rules": {
+        "qualifierCount": 2,
+        "lcqQualifierCount": 0,
+        "rankingTiebreakers": [
+          "wins",
+          "setDiff",
+          "setsWon"
+        ],
+        "roundRobinType": "single"
+      },
+      "priorSeasonId": null,
+      "createdAt": "2026-04-18T00:00:00.000Z",
+      "updatedAt": "2026-04-18T00:00:00.000Z",
+      "status": "draft",
+      "simulationConfig": {
+        "iterations": 4000,
+        "priorWeightDecay": 0.45,
+        "decimalPlaces": 1,
+        "shrinkageMatches": 5,
+        "opponentStrengthWeight": 0.42,
+        "setSkewFactor": 1.18
+      },
+      "format": "tournament",
+      "category": "regional",
+      "region": "asia",
+      "parentSeasonId": null,
+      "qualificationTargetSeasonIds": [
+        "season_2026_champions_clash"
+      ],
+      "tournamentConfig": null
+    },
+    {
+      "id": "season_2026_champions_clash",
+      "leagueId": "league_owcs_korea",
+      "name": "2026 챔피언스 클래시",
+      "year": 2026,
+      "order": 42,
+      "teamIds": [
+        "team_slot_2026_champions_clash_asia_1",
+        "team_slot_2026_champions_clash_asia_2",
+        "team_slot_2026_champions_clash_china_1",
+        "team_slot_2026_champions_clash_china_2",
+        "team_slot_2026_champions_clash_emea_1",
+        "team_slot_2026_champions_clash_emea_2",
+        "team_slot_2026_champions_clash_na_1",
+        "team_slot_2026_champions_clash_na_2"
+      ],
+      "rules": {
+        "qualifierCount": 0,
+        "lcqQualifierCount": 0,
+        "rankingTiebreakers": [
+          "wins",
+          "setDiff",
+          "setsWon"
+        ],
+        "roundRobinType": "single"
+      },
+      "priorSeasonId": null,
+      "createdAt": "2026-04-18T00:00:00.000Z",
+      "updatedAt": "2026-04-18T00:00:00.000Z",
+      "status": "draft",
+      "simulationConfig": {
+        "iterations": 4000,
+        "priorWeightDecay": 0.45,
+        "decimalPlaces": 1,
+        "shrinkageMatches": 5,
+        "opponentStrengthWeight": 0.42,
+        "setSkewFactor": 1.18
+      },
+      "format": "tournament",
+      "category": "international",
+      "region": "international",
+      "parentSeasonId": null,
+      "qualificationTargetSeasonIds": [],
+      "tournamentConfig": null
+    },
+    {
+      "id": "season_2026_midseason_championship",
+      "leagueId": "league_owcs_korea",
+      "name": "2026 미드시즌 챔피언십",
+      "year": 2026,
+      "order": 43,
+      "teamIds": [],
+      "rules": {
+        "qualifierCount": 0,
+        "lcqQualifierCount": 0,
+        "rankingTiebreakers": [
+          "wins",
+          "setDiff",
+          "setsWon"
+        ],
+        "roundRobinType": "single"
+      },
+      "priorSeasonId": null,
+      "createdAt": "2026-04-18T00:00:00.000Z",
+      "updatedAt": "2026-04-18T00:00:00.000Z",
+      "status": "draft",
+      "simulationConfig": {
+        "iterations": 4000,
+        "priorWeightDecay": 0.45,
+        "decimalPlaces": 1,
+        "shrinkageMatches": 5,
+        "opponentStrengthWeight": 0.42,
+        "setSkewFactor": 1.18
+      },
+      "format": "tournament",
+      "category": "international",
+      "region": "international",
+      "parentSeasonId": null,
+      "qualificationTargetSeasonIds": [],
+      "tournamentConfig": null
+    },
+    {
+      "id": "season_2026_world_finals",
+      "leagueId": "league_owcs_korea",
+      "name": "2026 월드 파이널",
+      "year": 2026,
+      "order": 44,
+      "teamIds": [],
+      "rules": {
+        "qualifierCount": 0,
+        "lcqQualifierCount": 0,
+        "rankingTiebreakers": [
+          "wins",
+          "setDiff",
+          "setsWon"
+        ],
+        "roundRobinType": "single"
+      },
+      "priorSeasonId": null,
+      "createdAt": "2026-04-18T00:00:00.000Z",
+      "updatedAt": "2026-04-18T00:00:00.000Z",
+      "status": "draft",
+      "simulationConfig": {
+        "iterations": 4000,
+        "priorWeightDecay": 0.45,
+        "decimalPlaces": 1,
+        "shrinkageMatches": 5,
+        "opponentStrengthWeight": 0.42,
+        "setSkewFactor": 1.18
+      },
+      "format": "tournament",
+      "category": "international",
+      "region": "international",
+      "parentSeasonId": null,
+      "qualificationTargetSeasonIds": [],
+      "tournamentConfig": null
     }
   ],
   "seasonTeams": [
@@ -9059,6 +9369,81 @@
         "grandFinalFirstTo": 4,
         "notes": "공식 포맷 기준 6팀 싱글 엘리미네이션. 시드결정전 1·2위는 1라운드 부전승. 1라운드는 5월 1일, 2라운드는 5월 2일, 결승전은 5월 3일 진행되며 결승만 FT4. 상세 경기 시간은 추후 공개 시 반영."
       }
+    },
+    {
+      "id": "phase_2026_asia_stage1_championship",
+      "seasonId": "season_2026_asia_stage1",
+      "name": "챔피언십",
+      "order": 1,
+      "phaseType": "main_event",
+      "bracketType": "hybrid",
+      "teamIds": [
+        "team_slot_2026_asia_stage1_kor_1",
+        "team_slot_2026_asia_stage1_kor_2",
+        "team_slot_2026_asia_stage1_kor_3",
+        "team_slot_2026_asia_stage1_kor_4",
+        "team_slot_2026_asia_stage1_jpn_1",
+        "team_slot_2026_asia_stage1_jpn_2",
+        "team_slot_2026_asia_stage1_jpn_3",
+        "team_slot_2026_asia_stage1_pac_1"
+      ],
+      "startDate": "",
+      "endDate": "",
+      "metadata": {
+        "advancesCount": 2,
+        "notes": "공식 포맷·일정 추후 확정"
+      }
+    },
+    {
+      "id": "phase_2026_champions_clash_event",
+      "seasonId": "season_2026_champions_clash",
+      "name": "메인 이벤트",
+      "order": 1,
+      "phaseType": "main_event",
+      "bracketType": "hybrid",
+      "teamIds": [
+        "team_slot_2026_champions_clash_asia_1",
+        "team_slot_2026_champions_clash_asia_2",
+        "team_slot_2026_champions_clash_china_1",
+        "team_slot_2026_champions_clash_china_2",
+        "team_slot_2026_champions_clash_emea_1",
+        "team_slot_2026_champions_clash_emea_2",
+        "team_slot_2026_champions_clash_na_1",
+        "team_slot_2026_champions_clash_na_2"
+      ],
+      "startDate": "2026-05-22T00:00:00+09:00",
+      "endDate": "2026-05-24T23:59:00+09:00",
+      "metadata": {
+        "notes": "공식 포맷·대진 추후 확정"
+      }
+    },
+    {
+      "id": "phase_2026_midseason_championship_event",
+      "seasonId": "season_2026_midseason_championship",
+      "name": "메인 이벤트",
+      "order": 1,
+      "phaseType": "main_event",
+      "bracketType": "hybrid",
+      "teamIds": [],
+      "startDate": "2026-07-29T00:00:00+03:00",
+      "endDate": "2026-08-02T23:59:00+03:00",
+      "metadata": {
+        "notes": "공식 포맷·참가 슬롯 추후 확정"
+      }
+    },
+    {
+      "id": "phase_2026_world_finals_event",
+      "seasonId": "season_2026_world_finals",
+      "name": "메인 이벤트",
+      "order": 1,
+      "phaseType": "main_event",
+      "bracketType": "hybrid",
+      "teamIds": [],
+      "startDate": "2026-12-02T00:00:00+08:00",
+      "endDate": "2026-12-06T23:59:00+08:00",
+      "metadata": {
+        "notes": "공식 포맷·참가 슬롯 추후 확정"
+      }
     }
   ],
   "seasonEntries": [
@@ -10224,6 +10609,182 @@
         "subregion": "korea",
         "note": "정규시즌 5~8위는 LCQ 진출"
       }
+    },
+    {
+      "seasonId": "season_2026_asia_stage1",
+      "teamId": "team_slot_2026_asia_stage1_kor_1",
+      "seed": 1,
+      "displaySeed": "KOR #1",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish",
+      "sourceSeasonId": "season_2026_stage1_play_in",
+      "phaseId": "phase_2026_stage1_play_in_playoffs",
+      "sourcePlacement": 1,
+      "metadata": {
+        "subregion": "korea"
+      }
+    },
+    {
+      "seasonId": "season_2026_asia_stage1",
+      "teamId": "team_slot_2026_asia_stage1_kor_2",
+      "seed": 2,
+      "displaySeed": "KOR #2",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish",
+      "sourceSeasonId": "season_2026_stage1_play_in",
+      "phaseId": "phase_2026_stage1_play_in_playoffs",
+      "sourcePlacement": 2,
+      "metadata": {
+        "subregion": "korea"
+      }
+    },
+    {
+      "seasonId": "season_2026_asia_stage1",
+      "teamId": "team_slot_2026_asia_stage1_kor_3",
+      "seed": 3,
+      "displaySeed": "KOR #3",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish",
+      "sourceSeasonId": "season_2026_stage1_play_in",
+      "phaseId": "phase_2026_stage1_play_in_playoffs",
+      "sourcePlacement": 3,
+      "metadata": {
+        "subregion": "korea"
+      }
+    },
+    {
+      "seasonId": "season_2026_asia_stage1",
+      "teamId": "team_slot_2026_asia_stage1_kor_4",
+      "seed": 4,
+      "displaySeed": "KOR #4",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish",
+      "sourceSeasonId": "season_2026_stage1_play_in",
+      "phaseId": "phase_2026_stage1_play_in_playoffs",
+      "sourcePlacement": 4,
+      "metadata": {
+        "subregion": "korea"
+      }
+    },
+    {
+      "seasonId": "season_2026_asia_stage1",
+      "teamId": "team_slot_2026_asia_stage1_jpn_1",
+      "seed": 5,
+      "displaySeed": "JPN #1",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish",
+      "metadata": {
+        "subregion": "japan"
+      }
+    },
+    {
+      "seasonId": "season_2026_asia_stage1",
+      "teamId": "team_slot_2026_asia_stage1_jpn_2",
+      "seed": 6,
+      "displaySeed": "JPN #2",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish",
+      "metadata": {
+        "subregion": "japan"
+      }
+    },
+    {
+      "seasonId": "season_2026_asia_stage1",
+      "teamId": "team_slot_2026_asia_stage1_jpn_3",
+      "seed": 7,
+      "displaySeed": "JPN #3",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish",
+      "metadata": {
+        "subregion": "japan"
+      }
+    },
+    {
+      "seasonId": "season_2026_asia_stage1",
+      "teamId": "team_slot_2026_asia_stage1_pac_1",
+      "seed": 8,
+      "displaySeed": "PAC #1",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish",
+      "metadata": {
+        "subregion": "pacific"
+      }
+    },
+    {
+      "seasonId": "season_2026_champions_clash",
+      "teamId": "team_slot_2026_champions_clash_asia_1",
+      "seed": 1,
+      "displaySeed": "ASIA #1",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish",
+      "sourceSeasonId": "season_2026_asia_stage1",
+      "phaseId": "phase_2026_asia_stage1_championship",
+      "sourcePlacement": 1,
+      "metadata": {
+        "subregion": "asia"
+      }
+    },
+    {
+      "seasonId": "season_2026_champions_clash",
+      "teamId": "team_slot_2026_champions_clash_asia_2",
+      "seed": 2,
+      "displaySeed": "ASIA #2",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish",
+      "sourceSeasonId": "season_2026_asia_stage1",
+      "phaseId": "phase_2026_asia_stage1_championship",
+      "sourcePlacement": 2,
+      "metadata": {
+        "subregion": "asia"
+      }
+    },
+    {
+      "seasonId": "season_2026_champions_clash",
+      "teamId": "team_slot_2026_champions_clash_china_1",
+      "seed": 3,
+      "displaySeed": "CN #1",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish"
+    },
+    {
+      "seasonId": "season_2026_champions_clash",
+      "teamId": "team_slot_2026_champions_clash_china_2",
+      "seed": 4,
+      "displaySeed": "CN #2",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish"
+    },
+    {
+      "seasonId": "season_2026_champions_clash",
+      "teamId": "team_slot_2026_champions_clash_emea_1",
+      "seed": 5,
+      "displaySeed": "EMEA #1",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish"
+    },
+    {
+      "seasonId": "season_2026_champions_clash",
+      "teamId": "team_slot_2026_champions_clash_emea_2",
+      "seed": 6,
+      "displaySeed": "EMEA #2",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish"
+    },
+    {
+      "seasonId": "season_2026_champions_clash",
+      "teamId": "team_slot_2026_champions_clash_na_1",
+      "seed": 7,
+      "displaySeed": "NA #1",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish"
+    },
+    {
+      "seasonId": "season_2026_champions_clash",
+      "teamId": "team_slot_2026_champions_clash_na_2",
+      "seed": 8,
+      "displaySeed": "NA #2",
+      "entrySourceType": "direct_qualifier",
+      "qualifierType": "regional_top_finish"
     }
   ],
   "qualificationLinks": [
@@ -10286,6 +10847,26 @@
       "qualificationType": "international_qualification",
       "targetSeasonId": "season_2025_world_finals",
       "label": "APAC winner qualifies to World Finals"
+    },
+    {
+      "id": "qual_2026_stage1_play_in_top4_asia_stage1",
+      "sourceSeasonId": "season_2026_stage1_play_in",
+      "sourcePhaseId": "phase_2026_stage1_play_in_playoffs",
+      "placementStart": 1,
+      "placementEnd": 4,
+      "qualificationType": "advance",
+      "targetSeasonId": "season_2026_asia_stage1",
+      "label": "Top 4 qualify to Asia Stage 1"
+    },
+    {
+      "id": "qual_2026_asia_stage1_top2_champions_clash",
+      "sourceSeasonId": "season_2026_asia_stage1",
+      "sourcePhaseId": "phase_2026_asia_stage1_championship",
+      "placementStart": 1,
+      "placementEnd": 2,
+      "qualificationType": "international_qualification",
+      "targetSeasonId": "season_2026_champions_clash",
+      "label": "Top 2 qualify to Champions Clash"
     }
   ]
 }

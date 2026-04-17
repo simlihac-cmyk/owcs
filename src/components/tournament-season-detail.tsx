@@ -447,6 +447,18 @@ function inferBracketEdges(matches: Match[]): InferredBracketEdge[] {
 }
 
 function getPhaseSourceLabel(league: League, entry: SeasonEntry): string | null {
+  if (entry.phaseId) {
+    const sourcePhase = (league.seasonPhases ?? []).find((candidate) => candidate.id === entry.phaseId);
+    const sourceSeason = sourcePhase
+      ? league.seasons.find((candidate) => candidate.id === sourcePhase.seasonId)
+      : null;
+
+    if (sourcePhase) {
+      const baseLabel = sourceSeason ? `${sourceSeason.name} ${sourcePhase.name}` : sourcePhase.name;
+      return entry.sourcePlacement ? `${baseLabel} ${entry.sourcePlacement}위` : baseLabel;
+    }
+  }
+
   if (!entry.sourceSeasonId) {
     return null;
   }
@@ -1097,18 +1109,30 @@ export function TournamentSeasonDetail(props: { league: League; season: Season }
       ]);
 
       return {
-        ...Object.fromEntries(
-          seasonEntries
-            .filter((entry) => entry.sourceSeasonId && entry.sourcePlacement)
-            .map((entry) => [
-              entry.teamId,
-              {
-                kind: "sourcePlacement",
-                sourceSeasonId: entry.sourceSeasonId as string,
-                placement: entry.sourcePlacement as number
-              } satisfies TournamentSlotRule
-            ])
-        ),
+        ...seasonEntries.reduce<Record<string, TournamentSlotRule>>((rules, entry) => {
+          if (!entry.sourcePlacement) {
+            return rules;
+          }
+
+          if (entry.phaseId) {
+            rules[entry.teamId] = {
+              kind: "phasePlacement",
+              phaseId: entry.phaseId,
+              placement: entry.sourcePlacement
+            };
+            return rules;
+          }
+
+          if (entry.sourceSeasonId) {
+            rules[entry.teamId] = {
+              kind: "sourcePlacement",
+              sourceSeasonId: entry.sourceSeasonId,
+              placement: entry.sourcePlacement
+            };
+          }
+
+          return rules;
+        }, {}),
         ...Object.fromEntries(
           Object.entries(derivedTournamentSlotRules).filter(([teamId]) => referencedSlotTeamIds.has(teamId))
         )
@@ -1159,29 +1183,39 @@ export function TournamentSeasonDetail(props: { league: League; season: Season }
     const placementsByKey: Record<string, string> = {};
 
     for (const phaseId of phaseIds) {
-      const phase = seasonPhases.find((candidate) => candidate.id === phaseId);
+      const phase = (league.seasonPhases ?? []).find((candidate) => candidate.id === phaseId);
 
       if (!phase) {
         continue;
       }
 
-      const phaseMatches = seasonMatches.filter((match) => match.phaseId === phaseId);
+      const sourceSeason = league.seasons.find((candidate) => candidate.id === phase.seasonId);
+
+      if (!sourceSeason) {
+        continue;
+      }
+
+      const phaseMatches = league.matches.filter((match) => match.phaseId === phaseId);
 
       if (!areMatchesComplete(phaseMatches)) {
         continue;
       }
 
       const phaseSeason = {
-        ...season,
+        ...sourceSeason,
         id: phase.id,
         name: phase.name,
         teamIds: phase.teamIds
       };
+      const sourceTeamMap = getSeasonTeamNameMap(league, sourceSeason);
       const phaseTeamNames = Object.fromEntries(
-        phase.teamIds.map((teamId) => [teamId, createTournamentTeamDetail(league, teamMap, teamId).displayName])
+        phase.teamIds.map((teamId) => [
+          teamId,
+          createTournamentTeamDetail(league, sourceTeamMap, teamId).displayName
+        ])
       );
       const records = buildCurrentSeasonRecords(phaseSeason, phaseMatches);
-      const standings = sortStandings(records, phaseTeamNames, season.rules);
+      const standings = sortStandings(records, phaseTeamNames, sourceSeason.rules);
 
       for (const standing of standings) {
         placementsByKey[`${phaseId}:${standing.rank}`] = standing.teamId;
@@ -1189,7 +1223,7 @@ export function TournamentSeasonDetail(props: { league: League; season: Season }
     }
 
     return placementsByKey;
-  }, [league, season, seasonMatches, seasonPhases, slotRulesByTeamId, teamMap]);
+  }, [league, slotRulesByTeamId]);
   const matchOutcomeTeamIds = useMemo(() => {
     const outcomeRules = Object.values(slotRulesByTeamId).filter(
       (rule): rule is Extract<TournamentSlotRule, { kind: "matchOutcome" }> => rule.kind === "matchOutcome"
