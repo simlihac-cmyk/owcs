@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist, StateStorage } from "zustand/middleware";
-import { DEFAULT_LEAGUE_RULES, DEFAULT_SIMULATION_CONFIG } from "@/lib/constants";
+import { DEFAULT_LEAGUE_RULES, DEFAULT_SIMULATION_CONFIG, DEFAULT_TOURNAMENT_CONFIG } from "@/lib/constants";
 import { recommendPriorSeasonId } from "@/lib/domain/prior";
 import {
   createSeasonShell,
@@ -178,11 +178,26 @@ function getLegacyLcqQualifierCount(teamCount: number, qualifierCount: number): 
 function normalizeLeague(league: League): League {
   return {
     ...league,
+    seasonPhases: league.seasonPhases ?? [],
+    seasonEntries: league.seasonEntries ?? [],
+    qualificationLinks: league.qualificationLinks ?? [],
     seasons: league.seasons.map((season) => {
       const qualifierCount = season.rules.qualifierCount ?? DEFAULT_LEAGUE_RULES.qualifierCount;
 
       return {
         ...season,
+        format: season.format ?? "league",
+        category: season.category ?? "subregion",
+        region: season.region ?? "korea",
+        parentSeasonId: season.parentSeasonId ?? null,
+        qualificationTargetSeasonIds: season.qualificationTargetSeasonIds ?? [],
+        tournamentConfig:
+          season.format === "tournament" || season.tournamentConfig
+            ? {
+                ...DEFAULT_TOURNAMENT_CONFIG,
+                ...season.tournamentConfig
+              }
+            : null,
         rules: {
           ...DEFAULT_LEAGUE_RULES,
           ...season.rules,
@@ -247,31 +262,13 @@ function getMatchLabel(league: League, seasonId: string, teamAId: string, teamBI
   return `${teamMap[teamAId] ?? teamAId} vs ${teamMap[teamBId] ?? teamBId}`;
 }
 
-function getReplayCodeCount(result: MatchResult | null | undefined): number {
-  if (!result) {
-    return 0;
-  }
-
-  return result.setsA + result.setsB;
-}
-
-function normalizeReplayCodes(replayCodes: string[] | undefined, result: MatchResult | null | undefined): string[] {
-  const targetLength = getReplayCodeCount(result);
-
-  if (targetLength === 0) {
-    return [];
-  }
-
-  return Array.from({ length: targetLength }, (_, index) => replayCodes?.[index] ?? "");
-}
-
 function areStringArraysEqual(left: string[], right: string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 const initialLeague = normalizeIncomingLeague(loadSampleLeague());
 export const STORE_VERSION = 3;
-export const SAMPLE_DATA_VERSION = 5;
+export const SAMPLE_DATA_VERSION = 6;
 
 const noopStorage: StateStorage = {
   getItem: () => null,
@@ -575,7 +572,19 @@ export const useLeagueStore = create<LeagueStoreState>()(
             simulationConfig: {
               ...DEFAULT_SIMULATION_CONFIG,
               ...input.simulationConfig
-            }
+            },
+            format: input.format ?? "league",
+            category: input.category ?? "subregion",
+            region: input.region ?? "korea",
+            parentSeasonId: input.parentSeasonId ?? null,
+            qualificationTargetSeasonIds: input.qualificationTargetSeasonIds ?? [],
+            tournamentConfig:
+              (input.format ?? "league") === "tournament"
+                ? {
+                    ...DEFAULT_TOURNAMENT_CONFIG,
+                    ...(input.tournamentConfig ?? {})
+                  }
+                : null
           };
           const seasonTeams: SeasonTeam[] = teamIds.map((teamId) => ({
             seasonId: season.id,
@@ -587,12 +596,15 @@ export const useLeagueStore = create<LeagueStoreState>()(
                   ""
               ] ?? null
           }));
-          const matches = generateRoundRobinMatches(
-            season.id,
-            teamIds,
-            season.rules.roundRobinType,
-            season.createdAt
-          );
+          const matches =
+            season.format === "league"
+              ? generateRoundRobinMatches(
+                  season.id,
+                  teamIds,
+                  season.rules.roundRobinType,
+                  season.createdAt
+                )
+              : [];
           const nextLeague = {
             ...state.league,
             teams: [...state.league.teams, ...newTeams],
@@ -638,18 +650,23 @@ export const useLeagueStore = create<LeagueStoreState>()(
             input.teamEdits !== undefined && !areStringArraysEqual(nextTeamIds, currentSeason.teamIds);
           const needsScheduleRebuild =
             teamIdsChanged ||
+            (input.format !== undefined && input.format !== currentSeason.format) ||
             (input.rules?.roundRobinType !== undefined &&
               input.rules.roundRobinType !== currentSeason.rules.roundRobinType);
-          const rebuiltMatches = needsScheduleRebuild
-            ? regenerateSeasonSchedule({
-                season: {
-                  ...currentSeason,
-                  rules: nextRules
-                },
-                existingMatches: seasonMatches,
-                nextTeamIds
-              })
-            : seasonMatches;
+          const nextFormat = input.format ?? currentSeason.format;
+          const rebuiltMatches =
+            nextFormat !== "league"
+              ? seasonMatches
+              : needsScheduleRebuild
+                ? regenerateSeasonSchedule({
+                    season: {
+                      ...currentSeason,
+                      rules: nextRules
+                    },
+                    existingMatches: seasonMatches,
+                    nextTeamIds
+                  })
+                : seasonMatches;
 
           const updatedLeague: League = {
             ...state.league,
@@ -662,6 +679,21 @@ export const useLeagueStore = create<LeagueStoreState>()(
                     priorSeasonId:
                       input.priorSeasonId === undefined ? season.priorSeasonId : input.priorSeasonId,
                     teamIds: nextTeamIds,
+                    format: nextFormat,
+                    category: input.category ?? season.category,
+                    region: input.region ?? season.region,
+                    parentSeasonId:
+                      input.parentSeasonId === undefined ? season.parentSeasonId : input.parentSeasonId,
+                    qualificationTargetSeasonIds:
+                      input.qualificationTargetSeasonIds ?? season.qualificationTargetSeasonIds ?? [],
+                    tournamentConfig:
+                      nextFormat === "tournament"
+                        ? {
+                            ...DEFAULT_TOURNAMENT_CONFIG,
+                            ...(season.tournamentConfig ?? {}),
+                            ...(input.tournamentConfig ?? {})
+                          }
+                        : null,
                     rules: nextRules,
                     simulationConfig: {
                       ...season.simulationConfig,

@@ -1,10 +1,39 @@
 export type RankingTiebreaker = "wins" | "setDiff" | "setsWon";
 export type RoundRobinType = "single" | "double";
 export type SeasonStatus = "draft" | "ongoing" | "completed";
+export type SeasonFormat = "league" | "tournament";
+export type SeasonCategory = "subregion" | "regional" | "international";
+export type RegionCode = "korea" | "japan" | "pacific" | "asia" | "international" | "other";
+export type PhaseType =
+  | "regular_season"
+  | "playoffs"
+  | "wild_card"
+  | "main_event"
+  | "groups"
+  | "bracket";
+export type BracketType =
+  | "round_robin"
+  | "single_elimination"
+  | "double_elimination"
+  | "swiss"
+  | "hybrid";
+export type EntrySourceType = "direct_qualifier" | "wild_card_winner" | "invited" | "carry_over";
+export type QualifierType = "regional_top_finish" | "wild_card" | "partner_seed" | "points" | "manual";
+export type QualificationOutcome =
+  | "advance"
+  | "wild_card"
+  | "international_qualification"
+  | "eliminated";
+export type BracketSide = "upper" | "lower" | "grand_final" | "wild_card" | "group" | "other";
 
 export interface Team {
   id: string;
   name: string;
+  shortName?: string | null;
+  country?: string | null;
+  primaryRegion?: RegionCode | null;
+  aliases?: string[];
+  logoPath?: string | null;
 }
 
 export interface MatchResult {
@@ -30,6 +59,13 @@ export interface SimulationConfig {
   setSkewFactor: number;
 }
 
+export interface TournamentConfig {
+  bracketType: BracketType;
+  defaultFirstTo: number;
+  grandFinalFirstTo?: number | null;
+  hasBracketReset: boolean;
+}
+
 export interface Season {
   id: string;
   leagueId: string;
@@ -43,6 +79,12 @@ export interface Season {
   updatedAt: string;
   status: SeasonStatus;
   simulationConfig: SimulationConfig;
+  format: SeasonFormat;
+  category: SeasonCategory;
+  region: RegionCode;
+  parentSeasonId?: string | null;
+  qualificationTargetSeasonIds?: string[];
+  tournamentConfig?: TournamentConfig | null;
 }
 
 export interface SeasonTeam {
@@ -61,6 +103,60 @@ export interface Match {
   played: boolean;
   result?: MatchResult | null;
   replayCodes?: string[];
+  phaseId?: string | null;
+  bracketSide?: BracketSide;
+  roundNumber?: number | null;
+  matchNumber?: number | null;
+  firstTo?: number | null;
+  isGrandFinal?: boolean;
+  winnerToMatchId?: string | null;
+  loserToMatchId?: string | null;
+}
+
+export interface SeasonPhase {
+  id: string;
+  seasonId: string;
+  name: string;
+  order: number;
+  phaseType: PhaseType;
+  bracketType: BracketType;
+  teamIds: string[];
+  startDate: string;
+  endDate: string;
+  metadata?: {
+    advancesCount?: number;
+    notes?: string;
+    defaultFirstTo?: number;
+    grandFinalFirstTo?: number;
+    hasBracketReset?: boolean;
+  };
+}
+
+export interface SeasonEntry {
+  seasonId: string;
+  teamId: string;
+  phaseId?: string | null;
+  seed: number;
+  displaySeed?: string | null;
+  entrySourceType: EntrySourceType;
+  qualifierType: QualifierType;
+  sourceSeasonId?: string | null;
+  sourcePlacement?: number | null;
+  metadata?: {
+    subregion?: RegionCode;
+    note?: string;
+  };
+}
+
+export interface QualificationLink {
+  id: string;
+  sourceSeasonId: string;
+  sourcePhaseId?: string | null;
+  placementStart: number;
+  placementEnd: number;
+  qualificationType: QualificationOutcome;
+  targetSeasonId: string;
+  label: string;
 }
 
 export interface CurrentSeasonRecord {
@@ -165,6 +261,9 @@ export interface League {
   seasons: Season[];
   seasonTeams: SeasonTeam[];
   matches: Match[];
+  seasonPhases?: SeasonPhase[];
+  seasonEntries?: SeasonEntry[];
+  qualificationLinks?: QualificationLink[];
 }
 
 export interface ChangeLogEntry {
@@ -228,6 +327,12 @@ export interface CreateSeasonInput {
   simulationConfig?: Partial<SimulationConfig>;
   priorSeasonId?: string | null;
   manualInitialRatings?: Record<string, number>;
+  format?: SeasonFormat;
+  category?: SeasonCategory;
+  region?: RegionCode;
+  parentSeasonId?: string | null;
+  qualificationTargetSeasonIds?: string[];
+  tournamentConfig?: TournamentConfig | null;
 }
 
 export interface UpdateSeasonSettingsInput {
@@ -236,6 +341,12 @@ export interface UpdateSeasonSettingsInput {
   priorSeasonId?: string | null;
   rules?: Partial<LeagueRules>;
   simulationConfig?: Partial<SimulationConfig>;
+  format?: SeasonFormat;
+  category?: SeasonCategory;
+  region?: RegionCode;
+  parentSeasonId?: string | null;
+  qualificationTargetSeasonIds?: string[];
+  tournamentConfig?: TournamentConfig | null;
   teamEdits?: {
     teamIds: string[];
     newTeams?: Team[];

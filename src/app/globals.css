@@ -10,10 +10,13 @@
   --ow-line: rgba(17, 24, 39, 0.12);
   --ow-soft-line: rgba(17, 24, 39, 0.06);
   --ow-text: #16202c;
-  --ow-muted: #68788a;
+  --ow-muted: #4b5b6d;
   --ow-accent: #f28b2f;
   --ow-accent-2: #ffbf69;
   --ow-green: #3bb273;
+  --ow-navy: #17324a;
+  --ow-shadow: 0 28px 80px rgba(15, 23, 42, 0.12);
+  --ow-display-font: "Avenir Next", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
 
 html {
@@ -24,12 +27,12 @@ body {
   margin: 0;
   min-height: 100vh;
   color: #16202c;
-  font-family: "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  font-family: "Aptos", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(242, 139, 47, 0.18), transparent 22%),
-    radial-gradient(circle at 82% 14%, rgba(255, 191, 105, 0.2), transparent 16%),
-    radial-gradient(circle at bottom right, rgba(73, 127, 191, 0.12), transparent 24%),
-    linear-gradient(180deg, #f8fafc 0%, #f3f6fb 44%, #eef3f9 100%);
+    radial-gradient(circle at top left, rgba(242, 139, 47, 0.24), transparent 22%),
+    radial-gradient(circle at 82% 14%, rgba(255, 191, 105, 0.24), transparent 16%),
+    radial-gradient(circle at bottom right, rgba(73, 127, 191, 0.16), transparent 24%),
+    linear-gradient(180deg, #fbfcff 0%, #f4f7fb 36%, #edf2f8 100%);
 }
 
 * {
@@ -43,15 +46,41 @@ textarea {
   font: inherit;
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(242, 139, 47, 0.72);
+  outline-offset: 2px;
+}
+
 ::selection {
   background: rgba(242, 139, 47, 0.28);
 }
 
 .ow-shell {
+  position: relative;
   min-height: 100vh;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.38), transparent 35%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 22%);
+}
+
+.ow-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(23, 50, 74, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23, 50, 74, 0.035) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35), transparent 92%);
+}
+
+.ow-shell > * {
+  position: relative;
+  z-index: 1;
 }
 
 .ow-cut-panel {
@@ -60,10 +89,13 @@ textarea {
   border: 1px solid var(--ow-line);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(242, 246, 251, 0.98) 100%);
-  box-shadow:
-    0 24px 60px rgba(15, 23, 42, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  box-shadow: var(--ow-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
   clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 0 100%);
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
 }
 
 .ow-cut-panel::before {
@@ -87,6 +119,14 @@ textarea {
   pointer-events: none;
 }
 
+.ow-cut-panel:hover {
+  transform: translateY(-2px);
+  border-color: rgba(242, 139, 47, 0.18);
+  box-shadow:
+    0 34px 90px rgba(15, 23, 42, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.84);
+}
+
 .ow-panel-light {
   position: relative;
   overflow: hidden;
@@ -96,7 +136,12 @@ textarea {
   box-shadow:
     0 18px 48px rgba(15, 23, 42, 0.07),
     inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(14px);
   clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
 }
 
 .ow-panel-light::before {
@@ -107,9 +152,72 @@ textarea {
   background: linear-gradient(135deg, rgba(242, 139, 47, 0.08), transparent 18%);
 }
 
+.ow-panel-light:hover {
+  transform: translateY(-1px);
+  border-color: rgba(242, 139, 47, 0.2);
+  box-shadow:
+    0 24px 56px rgba(15, 23, 42, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
 .ow-title {
-  color: #536579;
+  color: #020617;
+  font-family: var(--ow-display-font);
   letter-spacing: 0.16em;
+}
+
+.ow-hero-panel {
+  background:
+    radial-gradient(circle at top right, rgba(23, 50, 74, 0.08), transparent 24%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 248, 252, 0.98) 48%, rgba(235, 242, 249, 0.98) 100%);
+}
+
+.ow-display-title {
+  font-family: var(--ow-display-font);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+  color: #06131f;
+}
+
+.ow-kicker {
+  color: var(--ow-navy);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.ow-grid-surface {
+  position: relative;
+}
+
+.ow-grid-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(23, 50, 74, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23, 50, 74, 0.04) 1px, transparent 1px);
+  background-size: 18px 18px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.2), transparent 85%);
+}
+
+.ow-appear {
+  animation: ow-rise 520ms cubic-bezier(0.2, 0.65, 0.2, 1) both;
+}
+
+.ow-stagger-1 {
+  animation-delay: 40ms;
+}
+
+.ow-stagger-2 {
+  animation-delay: 90ms;
+}
+
+.ow-stagger-3 {
+  animation-delay: 140ms;
 }
 
 .ow-muted {
@@ -127,21 +235,50 @@ textarea {
   background: linear-gradient(180deg, #ffbf69 0%, #f28b2f 100%);
   color: #101722;
   box-shadow: 0 12px 24px rgba(242, 139, 47, 0.18);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
 }
 
 .ow-primary-button:hover {
   filter: brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow: 0 18px 30px rgba(242, 139, 47, 0.24);
 }
 
 .ow-ghost-button {
   border: 1px solid rgba(17, 24, 39, 0.12);
   background: rgba(255, 255, 255, 0.65);
   color: #243243;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .ow-ghost-button:hover {
   border-color: rgba(242, 139, 47, 0.34);
   background: rgba(242, 139, 47, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+}
+
+.ow-danger-button {
+  border: 1px solid rgba(190, 24, 93, 0.18);
+  background: rgba(255, 255, 255, 0.72);
+  color: #8f2146;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.ow-danger-button:hover {
+  border-color: rgba(190, 24, 93, 0.28);
+  background: rgba(190, 24, 93, 0.06);
+  transform: translateY(-1px);
 }
 
 .ow-status-live {
@@ -160,4 +297,33 @@ textarea {
   border-color: rgba(17, 24, 39, 0.1);
   background: rgba(17, 24, 39, 0.04);
   color: #556476;
+}
+
+@keyframes ow-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .ow-cut-panel,
+  .ow-panel-light,
+  .ow-primary-button,
+  .ow-ghost-button,
+  .ow-danger-button,
+  .ow-appear {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
 }

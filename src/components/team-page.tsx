@@ -96,20 +96,20 @@ export function TeamPage(props: {
         <div className="grid gap-6 xl:grid-cols-[0.96fr_1.04fr]">
           <Panel title="전력 분석">
             <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                초기 rating {formatRating(rating.initialRating)}
+              <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                초기 기준 전력 {formatRating(rating.initialRating)}
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                현재 폼 rating {formatRating(rating.currentFormRating)}
+              <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                현재 경기력 전력 {formatRating(rating.currentFormRating)}
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                prior 비중 {formatPercent(rating.priorWeight * 100, 0)}
+              <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                직전 시즌 반영 비중 {formatPercent(rating.priorWeight * 100, 0)}
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
+              <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
                 현재 시즌 비중 {formatPercent(rating.currentWeight * 100, 0)}
               </div>
             </div>
-            <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
+            <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700">
               {previousStat
                 ? `직전 시즌 ${previousStat.finalRank}위 · ${previousStat.wins}-${previousStat.losses} · SD ${formatSigned(previousStat.setDiff)}`
                 : "직전 시즌 기록 없음"}
@@ -159,11 +159,11 @@ export function TeamPage(props: {
                       <p className="font-semibold text-ink">
                         {props.teamMap[props.selectedTeamId]} vs {props.teamMap[opponentId]}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">{formatDateTimeLabel(match.scheduledAt)}</p>
+                      <p className="mt-1 text-xs text-slate-700">{formatDateTimeLabel(match.scheduledAt)}</p>
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-sm font-semibold text-ink">{displayResult}</p>
-                      <p className="text-xs text-slate-500">{match.played && match.result ? "완료" : "남은 경기"}</p>
+                      <p className="text-xs text-slate-700">{match.played && match.result ? "완료" : "남은 경기"}</p>
                     </div>
                   </div>
                 </div>

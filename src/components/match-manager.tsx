@@ -188,14 +188,14 @@ export function MatchManager({
           <div>
             <h3 className="text-lg font-semibold text-ink">남은 경기 예측</h3>
           </div>
-          <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
+          <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
             {isLoading ? "계산 중.." : "예측 반영 완료"}
           </div>
         </div>
       </div>
 
       {predictionMatches.length === 0 ? (
-        <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/70 px-5 py-8 text-center text-sm text-slate-500">
+        <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/70 px-5 py-8 text-center text-sm text-slate-700">
           현재 기준으로 남은 경기가 없습니다.
         </div>
       ) : (
@@ -206,10 +206,10 @@ export function MatchManager({
           >
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Week</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-600">Week</p>
                 <h4 className="text-lg font-semibold text-ink">{weekGroup.weekIndex}주차</h4>
               </div>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                 {weekGroup.dateGroups.reduce((sum, dateGroup) => sum + dateGroup.matches.length, 0)}경기
               </span>
             </div>
@@ -219,7 +219,7 @@ export function MatchManager({
                 <div key={dateGroup.dateKey} className="rounded-[22px] border border-slate-200/70 bg-slate-50 px-3 py-3">
                   <div className="mb-2.5 flex items-center justify-between gap-3">
                     <h5 className="font-semibold text-ink">{formatDateLabel(dateGroup.dateKey)}</h5>
-                    <span className="text-xs font-semibold text-slate-500">{dateGroup.matches.length}경기</span>
+                    <span className="text-xs font-semibold text-slate-700">{dateGroup.matches.length}경기</span>
                   </div>
 
                   <div className="space-y-1.5">
@@ -242,7 +242,7 @@ export function MatchManager({
                                     예측 {activeResult.setsA}:{activeResult.setsB}
                                   </span>
                                 ) : (
-                                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">
+                                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700">
                                     아직 예측하지 않음
                                   </span>
                                 )}
@@ -253,13 +253,13 @@ export function MatchManager({
                                   <div className="flex items-center justify-between gap-4 text-[11px]">
                                     <div className="min-w-0">
                                       <p className="truncate font-semibold text-ink">{teamMap[match.teamAId]}</p>
-                                      <p className="mt-0.5 font-semibold text-slate-600">
+                                      <p className="mt-0.5 font-semibold text-slate-700">
                                         {formatPercent(insight.teamAWinProbability, 1)}
                                       </p>
                                     </div>
                                     <div className="min-w-0 text-right">
                                       <p className="truncate font-semibold text-ink">{teamMap[match.teamBId]}</p>
-                                      <p className="mt-0.5 font-semibold text-slate-600">
+                                      <p className="mt-0.5 font-semibold text-slate-700">
                                         {formatPercent(insight.teamBWinProbability, 1)}
                                       </p>
                                     </div>
@@ -306,10 +306,10 @@ export function MatchManager({
                                         ? "border-[#f28b2f] bg-[linear-gradient(135deg,#ffbf69,#f28b2f)] text-[#101722] shadow-[0_8px_24px_rgba(242,139,47,0.35)]"
                                         : isMostLikely
                                           ? "border-[#f3d5ae] bg-[linear-gradient(180deg,#fffaf2,#fff5e8)] text-[#8a5720] shadow-[0_4px_12px_rgba(242,139,47,0.10)]"
-                                          : "border-slate-200 bg-white text-slate-600 hover:border-[#f28b2f] hover:text-[#c86c1d]"
+                                          : "border-slate-200 bg-white text-slate-700 hover:border-[#f28b2f] hover:text-[#c86c1d]"
                                     }`}
                                   >
-                                    <span className={`text-[10px] ${isActive ? "text-[#5f3a10]" : "text-slate-400"}`}>
+                                    <span className={`text-[10px] ${isActive ? "text-[#5f3a10]" : "text-slate-600"}`}>
                                       {getResultProbabilityLabel(insight, option)}
                                     </span>
                                     <span className="mt-0.5 text-sm">{option}</span>
@@ -325,7 +325,7 @@ export function MatchManager({
                                   }));
                                   onChangeResult(match.id, null);
                                 }}
-                                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                               >
                                 예측 지우기
                               </button>

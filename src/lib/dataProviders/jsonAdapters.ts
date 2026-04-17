@@ -1,4 +1,4 @@
-import { DEFAULT_SIMULATION_CONFIG } from "@/lib/constants";
+import { DEFAULT_SIMULATION_CONFIG, DEFAULT_TOURNAMENT_CONFIG } from "@/lib/constants";
 import { buildPreviousSeasonStatsFromArchive } from "@/lib/domain/prior";
 import { League, Match, PreviousSeasonStats, Season } from "@/lib/types";
 
@@ -9,8 +9,23 @@ function deepClone<T>(value: T): T {
 export function loadLeagueFromJson(json: League): League {
   const cloned = deepClone(json);
 
+  cloned.seasonPhases = cloned.seasonPhases ?? [];
+  cloned.seasonEntries = cloned.seasonEntries ?? [];
+  cloned.qualificationLinks = cloned.qualificationLinks ?? [];
   cloned.seasons = cloned.seasons.map((season) => ({
     ...season,
+    format: season.format ?? "league",
+    category: season.category ?? "subregion",
+    region: season.region ?? "korea",
+    parentSeasonId: season.parentSeasonId ?? null,
+    qualificationTargetSeasonIds: season.qualificationTargetSeasonIds ?? [],
+    tournamentConfig:
+      season.format === "tournament" || season.tournamentConfig
+        ? {
+            ...DEFAULT_TOURNAMENT_CONFIG,
+            ...season.tournamentConfig
+          }
+        : null,
     simulationConfig: {
       ...DEFAULT_SIMULATION_CONFIG,
       ...season.simulationConfig

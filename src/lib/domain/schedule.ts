@@ -147,7 +147,13 @@ export function createSeasonShell(params: {
     updatedAt: timestamp,
     status: "draft",
     rules: { ...DEFAULT_LEAGUE_RULES },
-    simulationConfig: { ...DEFAULT_SIMULATION_CONFIG }
+    simulationConfig: { ...DEFAULT_SIMULATION_CONFIG },
+    format: "league",
+    category: "subregion",
+    region: "korea",
+    parentSeasonId: null,
+    qualificationTargetSeasonIds: [],
+    tournamentConfig: null
   };
 
   return {

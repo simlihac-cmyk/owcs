@@ -22,19 +22,20 @@ export function ProbabilityTable({ summaries, teamNameById, decimalPlaces }: Pro
   return (
     <div className="overflow-hidden rounded-[28px] border border-white/60 bg-white/85 shadow-panel backdrop-blur">
       <div className="border-b border-slate-200/80 px-5 py-4">
-        <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">최종 순위 분포</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-950">최종 순위 분포</h3>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full border-separate border-spacing-0 text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.18em] text-slate-500">
+          <caption className="sr-only">팀별 시드 결정전 확률과 최종 순위 분포 표</caption>
+          <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.18em] text-slate-700">
             <tr>
-              <th className="px-4 py-3">팀</th>
-              <th className="px-4 py-3">시드 결정전</th>
-              <th className="px-4 py-3">예상 최종 순위</th>
-              <th className="px-4 py-3">예상 승수</th>
-              <th className="px-4 py-3">예상 세트 득실</th>
+              <th scope="col" className="px-4 py-3">팀</th>
+              <th scope="col" className="px-4 py-3">시드 결정전</th>
+              <th scope="col" className="px-4 py-3">예상 최종 순위</th>
+              <th scope="col" className="px-4 py-3">예상 승수</th>
+              <th scope="col" className="px-4 py-3">예상 세트 득실</th>
               {rankColumns.map((rank) => (
-                <th key={rank} className="px-3 py-3 text-center">
+                <th key={rank} scope="col" className="px-3 py-3 text-center">
                   #{rank}
                 </th>
               ))}
@@ -43,7 +44,7 @@ export function ProbabilityTable({ summaries, teamNameById, decimalPlaces }: Pro
           <tbody>
             {summaries.map((summary) => (
               <tr key={summary.teamId} className="border-t border-slate-100 text-slate-700">
-                <td className="px-4 py-3 font-semibold text-ink">
+                <th scope="row" className="px-4 py-3 font-semibold text-ink">
                   <div className="flex items-center gap-3">
                     <span
                       className="h-2.5 w-2.5 rounded-full"
@@ -51,7 +52,7 @@ export function ProbabilityTable({ summaries, teamNameById, decimalPlaces }: Pro
                     />
                     <span>{teamNameById[summary.teamId] ?? summary.teamId}</span>
                   </div>
-                </td>
+                </th>
                 <td className="px-4 py-3 font-semibold text-pine">
                   {formatPercent(summary.qualifierProbability, decimalPlaces)}
                 </td>

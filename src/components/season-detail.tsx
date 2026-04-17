@@ -7,12 +7,14 @@ import {
   ImportantMatchCalendar,
   MobileSummaryCards,
   SummaryMetric,
-  TeamProbabilityCards
+  TeamProbabilityCards,
+  UpcomingPredictionSpotlight
 } from "@/components/season-dashboard-panels";
 import { ProbabilityTable } from "@/components/probability-table";
 import { RankingTable } from "@/components/ranking-table";
 import { Panel, StatCard } from "@/components/season-shared";
 import { TeamPage } from "@/components/team-page";
+import { TournamentSeasonDetail } from "@/components/tournament-season-detail";
 import {
   League,
   MatchOutcomeImpact,
@@ -79,6 +81,10 @@ function getSeasonStatusLabel(status: Season["status"]) {
   }
 
   return "준비 중";
+}
+
+function getSeasonFormatLabel(season: Season) {
+  return season.rules.roundRobinType === "double" ? "더블 라운드로빈" : "싱글 라운드로빈";
 }
 
 function getImpactMetricLabel(metric: ImpactMetric) {
@@ -256,7 +262,6 @@ export function SeasonDetail({
     () => insight?.currentStandings.map((standing) => standing.teamId) ?? season.teamIds,
     [insight, season.teamIds]
   );
-
   const titleContenderCount = useMemo(() => {
     if (!insight) {
       return 0;
@@ -276,29 +281,62 @@ export function SeasonDetail({
       (summary) => summary.qualifierProbability >= 5 && summary.qualifierProbability <= 95
     ).length;
   }, [insight]);
+  const heroSummary = useMemo(() => {
+    if (!insight) {
+      return "현재 순위와 남은 경기 변수를 한 화면에서 확인할 수 있습니다.";
+    }
+
+    if (season.status === "completed") {
+      return `총 ${insight.summary.totalMatchCount}경기를 모두 반영한 아카이브 시즌입니다.`;
+    }
+
+    if (insight.remainingMatches.length === 0) {
+      return "남은 경기가 없어 현재까지의 결과를 기준으로 예측이 사실상 확정된 상태입니다.";
+    }
+
+    return `남은 ${insight.remainingMatches.length}경기와 ${qualifierRaceCount}팀의 시드 경쟁 흐름을 함께 볼 수 있습니다.`;
+  }, [insight, qualifierRaceCount, season.status]);
+
+  if (season.format === "tournament") {
+    return <TournamentSeasonDetail league={league} season={season} />;
+  }
 
   return (
     <div className="space-y-6">
-      <section className="ow-cut-panel px-6 py-7 text-[var(--ow-text)]">
+      <section className="ow-cut-panel ow-hero-panel ow-appear ow-stagger-1 px-6 py-7 text-[var(--ow-text)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-sand">시즌 상세</p>
-            <h1 className="mt-3 text-3xl font-semibold">{season.name}</h1>
-            <div className="mt-4 inline-flex rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700">
-              {getSeasonStatusLabel(season.status)}
+            <p className="ow-kicker">Season Focus</p>
+            <h1 className="ow-display-title mt-3 text-[clamp(2.4rem,4vw,4.2rem)]">{season.name}</h1>
+            <p className="mt-4 max-w-2xl text-[0.98rem] leading-7 text-[var(--ow-muted)]">{heroSummary}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <div className="inline-flex rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700">
+                {getSeasonStatusLabel(season.status)}
+              </div>
+              <div className="inline-flex rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700">
+                {getSeasonFormatLabel(season)}
+              </div>
             </div>
           </div>
 
-          <div className="ow-panel-light min-w-[290px] px-4 py-4 text-sm text-[var(--ow-text)]">
-            <p>이전 시즌 기준: {priorSeason?.name ?? "중립 rating / 수동 입력"}</p>
-            <p className="mt-2">메인 시뮬레이션: {season.simulationConfig.iterations.toLocaleString()}회</p>
-            <p className="mt-2">
-              영향 분석: {insight ? insight.simulationMeta.analysisIterations.toLocaleString() : "-"}회
+          <div className="ow-panel-light min-w-[290px] max-w-[420px] px-4 py-4 text-sm text-[var(--ow-text)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ow-muted)]">
+              이번 시즌 한눈에
             </p>
-            <p className="mt-2">계산 상태: {isLoading ? "재계산 중" : "준비 완료"}</p>
-            <p className="mt-2">
-              마지막 계산: {insight ? formatDateTimeLabel(insight.simulationMeta.ranAt) : "대기 중"}
-            </p>
+            <div className="mt-3 space-y-2">
+              <p>비교 기준 시즌: {priorSeason?.name ?? "직전 데이터 없음 / 수동 기준값 사용"}</p>
+              <p>현재 상태: {isLoading ? "예측 다시 계산 중" : "최신 결과 반영 완료"}</p>
+              <p>마지막 반영 시각: {insight ? formatDateTimeLabel(insight.simulationMeta.ranAt) : "대기 중"}</p>
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <div className="rounded-2xl bg-white/70 px-3 py-3">
+                순위 예측 반복 계산 {season.simulationConfig.iterations.toLocaleString()}회
+              </div>
+              <div className="rounded-2xl bg-white/70 px-3 py-3">
+                영향 분석 반복 계산{" "}
+                {insight ? insight.simulationMeta.analysisIterations.toLocaleString() : "-"}회
+              </div>
+            </div>
           </div>
         </div>
 
@@ -317,12 +355,13 @@ export function SeasonDetail({
         </div>
       </section>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="ow-appear ow-stagger-2 flex flex-wrap gap-2" aria-label="시즌 상세 탭">
         {(Object.keys(tabLabels) as DetailTab[]).map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
+            aria-pressed={activeTab === tab}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
               activeTab === tab ? "ow-primary-button" : "ow-ghost-button"
             }`}
@@ -339,7 +378,11 @@ export function SeasonDetail({
       ) : null}
 
       {activeTab === "dashboard" && insight ? (
-        <div className="space-y-6">
+        <div className="space-y-6 ow-appear ow-stagger-3">
+          {season.status !== "completed" || insight.remainingMatchInsights.length > 0 ? (
+            <UpcomingPredictionSpotlight insight={insight} teamMap={teamMap} isLoading={isLoading} />
+          ) : null}
+
           <MobileSummaryCards insight={insight} teamMap={teamMap} metric={selectedSummaryMetric} />
 
           <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
@@ -349,12 +392,13 @@ export function SeasonDetail({
               ratingsByTeamId={insight.ratingsByTeamId}
             />
             <Panel title="확률 카드">
-              <div className="mb-4 flex flex-wrap gap-2">
+              <div className="mb-4 flex flex-wrap gap-2" aria-label="확률 카드 기준 선택">
                 {summaryMetricOptions.map((option) => (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => setSelectedSummaryMetric(option.value)}
+                    aria-pressed={selectedSummaryMetric === option.value}
                     className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
                       selectedSummaryMetric === option.value ? "ow-primary-button" : "ow-ghost-button"
                     }`}
@@ -381,7 +425,7 @@ export function SeasonDetail({
           <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
             <Panel title="중요 경기 캘린더">
               {insight.remainingMatchInsights.length === 0 ? (
-                <p className="text-sm text-slate-500">남은 경기가 없습니다.</p>
+                <p className="text-sm text-slate-700">남은 경기가 없습니다.</p>
               ) : (
                 <ImportantMatchCalendar insight={insight} teamMap={teamMap} />
               )}
@@ -390,7 +434,11 @@ export function SeasonDetail({
             <Panel title="경기 결과별 영향">
               {selectedMatchImpact ? (
                 <div className="space-y-4">
+                  <label htmlFor="impact-match-select" className="sr-only">
+                    영향 분석 경기 선택
+                  </label>
                   <select
+                    id="impact-match-select"
                     value={selectedImpactMatchId}
                     onChange={(event) => setSelectedImpactMatchId(event.target.value)}
                     className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-[var(--ow-text)]"
@@ -402,12 +450,13 @@ export function SeasonDetail({
                     ))}
                   </select>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2" aria-label="영향 지표 선택">
                     {availableImpactMetricOptions.map((option) => (
                       <button
                         key={option.value}
                         type="button"
                         onClick={() => setSelectedImpactMetric(option.value)}
+                        aria-pressed={selectedImpactMetric === option.value}
                         className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
                           selectedImpactMetric === option.value ? "ow-primary-button" : "ow-ghost-button"
                         }`}
@@ -417,7 +466,7 @@ export function SeasonDetail({
                     ))}
                   </div>
 
-                  <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
+                  <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
                     기본 예측: {teamMap[selectedMatchImpact.teamAId]} 승률{" "}
                     {formatPercent(selectedMatchImpact.teamAWinProbability, 1)} / {teamMap[selectedMatchImpact.teamBId]} 승률{" "}
                     {formatPercent(selectedMatchImpact.teamBWinProbability, 1)}
@@ -429,7 +478,7 @@ export function SeasonDetail({
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
                             <p className="font-semibold text-ink">결과 {outcome.resultLabel}</p>
-                            <p className="mt-1 text-xs text-slate-500">
+                            <p className="mt-1 text-xs text-slate-700">
                               가장 민감한 팀:{" "}
                               {selectedMatchImpact.biggestSwingTeamId
                                 ? teamMap[selectedMatchImpact.biggestSwingTeamId]
@@ -437,7 +486,7 @@ export function SeasonDetail({
                               · 기준 지표 {getImpactMetricLabel(selectedImpactMetric)}
                             </p>
                           </div>
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                             사전 확률 {formatPercent(selectedMatchImpact.resultProbabilities[outcome.resultLabel] ?? 0, 1)}
                           </span>
                         </div>
@@ -483,13 +532,13 @@ export function SeasonDetail({
                                   <span className="font-semibold text-ink">{teamMap[teamId] ?? teamId}</span>
                                   <span
                                     className={`font-semibold ${
-                                      delta > 0 ? "text-pine" : delta < 0 ? "text-coral" : "text-slate-500"
+                                      delta > 0 ? "text-pine" : delta < 0 ? "text-coral" : "text-slate-700"
                                     }`}
                                   >
                                     {formatImpactDelta(delta, selectedImpactMetric)}
                                   </span>
                                 </div>
-                                <p className="mt-auto pt-1 text-xs text-slate-500">
+                                <p className="mt-auto pt-1 text-xs text-slate-700">
                                   {getImpactMetricLabel(selectedImpactMetric)}{" "}
                                   {formatImpactMetricValue(nextValue, selectedImpactMetric)}
                                 </p>
@@ -502,22 +551,28 @@ export function SeasonDetail({
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-slate-500">영향을 분석할 남은 경기가 없습니다.</p>
+                <p className="text-sm text-slate-700">영향을 분석할 남은 경기가 없습니다.</p>
               )}
             </Panel>
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
             <Panel
-              title="전력과 모델 설정"
-              description={`prior ${season.simulationConfig.priorWeightDecay} · shrinkage ${season.simulationConfig.shrinkageMatches}경기 · 상대 강도 ${formatPercent(season.simulationConfig.opponentStrengthWeight * 100, 0)}`}
+              title="예측 기준과 팀 전력"
+              description="직전 시즌 기록과 현재 시즌 경기력을 함께 반영한 기준 전력입니다."
             >
               <div className="mb-4 grid gap-3 md:grid-cols-2">
-                <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
+                <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
                   시즌 진행률 {formatPercent(insight.priorBlend.completionRatio, 1)}
                 </div>
-                <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
+                <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
                   현재 시즌 반영 비중 {formatPercent(insight.priorBlend.currentWeight, 1)}
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                  직전 시즌 감소 계수 {formatDecimal(season.simulationConfig.priorWeightDecay, 2)}
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                  상대 전력 반영 비중 {formatPercent(season.simulationConfig.opponentStrengthWeight * 100, 0)}
                 </div>
               </div>
               <div className="space-y-3">
@@ -530,7 +585,7 @@ export function SeasonDetail({
                           <span className="h-3 w-3 rounded-full" style={{ backgroundColor: brand.primary }} />
                           <div>
                             <p className="font-semibold text-ink">{teamMap[item.teamId] ?? item.teamId}</p>
-                            <p className="mt-1 text-xs text-slate-500">
+                            <p className="mt-1 text-xs text-slate-700">
                               {item.previousSeasonRank
                                 ? `직전 시즌 ${item.previousSeasonRank}위`
                                 : "직전 시즌 데이터 없음"}
@@ -542,7 +597,7 @@ export function SeasonDetail({
                           <p className="text-lg font-semibold" style={{ color: brand.primary }}>
                             {formatRating(item.blendedRating)}
                           </p>
-                          <p className="text-xs text-slate-500">반영 전력</p>
+                          <p className="text-xs text-slate-700">현재 기준 전력</p>
                         </div>
                       </div>
                     </div>
@@ -566,7 +621,7 @@ export function SeasonDetail({
                                 ? "text-pine"
                                 : (trend.deltaFromPreviousRank ?? 0) < 0
                                   ? "text-coral"
-                                  : "text-slate-500"
+                                  : "text-slate-700"
                             }`}
                           >
                             {trend.deltaFromPreviousRank === null
@@ -577,7 +632,7 @@ export function SeasonDetail({
                                 )}`}
                           </span>
                         </div>
-                        <p className="mt-2 text-sm text-slate-600">
+                        <p className="mt-2 text-sm text-slate-700">
                           직전 시즌 {trend.previousRank ? `${trend.previousRank}위` : "기록 없음"} · 현재 기대 순위{" "}
                           {formatDecimal(trend.expectedRank, 1)}위
                         </p>
@@ -589,13 +644,13 @@ export function SeasonDetail({
 
               <Panel title="동률 메모">
                 {insight.tiebreakNotes.length === 0 ? (
-                  <p className="text-sm text-slate-500">현재는 별도 설명이 필요한 동률 구간이 없습니다.</p>
+                  <p className="text-sm text-slate-700">현재는 별도 설명이 필요한 동률 구간이 없습니다.</p>
                 ) : (
                   <div className="space-y-3">
                     {insight.tiebreakNotes.map((note) => (
                       <div
                         key={`${note.higherTeamId}-${note.lowerTeamId}`}
-                        className="rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600"
+                        className="rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700"
                       >
                         {note.reason}
                       </div>
@@ -659,7 +714,7 @@ export function SeasonDetail({
 
             <Panel title="완료 경기 리플레이">
               {insight.completedMatches.length === 0 ? (
-                <p className="text-sm text-slate-500">아직 완료된 경기가 없습니다.</p>
+                <p className="text-sm text-slate-700">아직 완료된 경기가 없습니다.</p>
               ) : (
                 <div className="space-y-3">
                   {insight.completedMatches
@@ -675,7 +730,7 @@ export function SeasonDetail({
                               <p className="font-semibold text-ink">
                                 {teamMap[match.teamAId] ?? match.teamAId} vs {teamMap[match.teamBId] ?? match.teamBId}
                               </p>
-                              <p className="mt-1 text-xs text-slate-500">{formatDateTimeLabel(match.scheduledAt)}</p>
+                              <p className="mt-1 text-xs text-slate-700">{formatDateTimeLabel(match.scheduledAt)}</p>
                             </div>
                             <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-slate-700">
                               {match.result ? `${match.result.setsA}:${match.result.setsB}` : "-"}
@@ -693,7 +748,7 @@ export function SeasonDetail({
                                 </span>
                               ))
                             ) : (
-                              <span className="rounded-full border border-dashed border-slate-300 bg-white/80 px-3 py-1.5 text-xs text-slate-500">
+                              <span className="rounded-full border border-dashed border-slate-300 bg-white/80 px-3 py-1.5 text-xs text-slate-700">
                                 리플레이 코드 없음
                               </span>
                             )}
@@ -709,7 +764,7 @@ export function SeasonDetail({
           <div className="space-y-6">
             <Panel title="이전 시즌 기준 데이터">
               {insight.previousSeasonStats.length === 0 ? (
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-700">
                   직전 시즌 데이터가 없어 중립 rating 또는 수동 rating을 사용합니다.
                 </p>
               ) : (
@@ -722,7 +777,7 @@ export function SeasonDetail({
                       <span className="font-semibold text-ink">
                         {priorTeamMap[stat.teamId] ?? teamMap[stat.teamId] ?? stat.teamId}
                       </span>
-                      <span className="text-slate-500">
+                      <span className="text-slate-700">
                         #{stat.finalRank} / {stat.wins}-{stat.losses} / SD {formatSigned(stat.setDiff)}
                       </span>
                     </div>

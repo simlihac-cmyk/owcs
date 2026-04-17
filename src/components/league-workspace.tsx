@@ -27,16 +27,12 @@ export function LeagueWorkspace({ sourceLeague }: LeagueWorkspaceProps) {
   const [readySourceFingerprint, setReadySourceFingerprint] = useState<string | null>(null);
   const sourceFingerprint = useMemo(() => JSON.stringify(sourceLeague), [sourceLeague]);
   const selectedSeason = getSelectedSeason(league, selectedSeasonId);
+  const insightSeasonId = selectedSeason?.format === "tournament" ? null : selectedSeason?.id ?? null;
   const displayLeague = useMemo(
     () => applyPredictionOverrides(league, predictionOverrides),
     [league, predictionOverrides]
   );
-  const insightState = useSeasonInsight(
-    league,
-    selectedSeason?.id ?? null,
-    predictionOverrides,
-    revision
-  );
+  const insightState = useSeasonInsight(league, insightSeasonId, predictionOverrides, revision);
 
   useEffect(() => {
     if (!hydrated) {
@@ -49,7 +45,11 @@ export function LeagueWorkspace({ sourceLeague }: LeagueWorkspaceProps) {
 
   if (!hydrated || readySourceFingerprint !== sourceFingerprint) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--ow-bg)] text-slate-600">
+      <div
+        className="flex min-h-screen items-center justify-center bg-[var(--ow-bg)] text-slate-600"
+        role="status"
+        aria-live="polite"
+      >
         현재 기준 데이터를 불러오는 중입니다.
       </div>
     );
@@ -57,8 +57,8 @@ export function LeagueWorkspace({ sourceLeague }: LeagueWorkspaceProps) {
 
   return (
     <div className="ow-shell">
-      <div className="mx-auto grid min-h-screen max-w-[1720px] gap-6 px-4 py-6 xl:grid-cols-[380px_1fr]">
-        <aside className="space-y-5">
+      <div className="mx-auto grid min-h-screen max-w-[1760px] gap-6 px-4 py-6 md:px-6 xl:grid-cols-[390px_1fr] xl:gap-8">
+        <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
           <SeasonArchiveList
             league={league}
             selectedSeasonId={selectedSeason?.id ?? null}
@@ -67,7 +67,7 @@ export function LeagueWorkspace({ sourceLeague }: LeagueWorkspaceProps) {
           />
         </aside>
 
-        <main>
+        <main className="space-y-6">
           {selectedSeason ? (
             <SeasonDetail
               league={displayLeague}

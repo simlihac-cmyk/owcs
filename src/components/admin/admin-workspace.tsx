@@ -1,10 +1,26 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { DEFAULT_LEAGUE_RULES, DEFAULT_SIMULATION_CONFIG, RESULT_OPTIONS } from "@/lib/constants";
+import {
+  DEFAULT_LEAGUE_RULES,
+  DEFAULT_SIMULATION_CONFIG,
+  DEFAULT_TOURNAMENT_CONFIG,
+  RESULT_OPTIONS
+} from "@/lib/constants";
 import { createSeasonShell, createTeamsFromNames, generateRoundRobinMatches } from "@/lib/domain/schedule";
 import { formatDateTimeLabel } from "@/lib/utils/format";
-import { League, MatchResult, RoundRobinType, Season, SeasonStatus, Team } from "@/lib/types";
+import {
+  BracketType,
+  League,
+  MatchResult,
+  RegionCode,
+  RoundRobinType,
+  Season,
+  SeasonCategory,
+  SeasonFormat,
+  SeasonStatus,
+  Team
+} from "@/lib/types";
 
 interface AdminLeagueResponse {
   league: League;
@@ -22,6 +38,15 @@ interface CreateSeasonFormState {
   order: number;
   teamText: string;
   priorSeasonId: string;
+  format: SeasonFormat;
+  category: SeasonCategory;
+  region: RegionCode;
+  parentSeasonId: string;
+  qualificationTargetIdsText: string;
+  bracketType: BracketType;
+  defaultFirstTo: number;
+  grandFinalFirstTo: number;
+  hasBracketReset: boolean;
   qualifierCount: number;
   lcqQualifierCount: number;
   roundRobinType: RoundRobinType;
@@ -116,6 +141,13 @@ function dedupeTeamNames(teamNames: string[]): string[] {
   );
 }
 
+function parseQualificationTargetIds(text: string): string[] {
+  return text
+    .split(/[\n,]+/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 function resolveTeamPool(league: League, teamNames: string[]) {
   const normalizedMap = new Map(league.teams.map((team) => [team.name.toLowerCase(), team]));
   const newTeams: Team[] = [];
@@ -153,6 +185,18 @@ function buildCreateSeasonFormState(league: League): CreateSeasonFormState {
           .join("\n")
       : "",
     priorSeasonId: latestSeason?.id ?? "",
+    format: latestSeason?.format ?? "league",
+    category: latestSeason?.category ?? "subregion",
+    region: latestSeason?.region ?? "korea",
+    parentSeasonId: latestSeason?.parentSeasonId ?? "",
+    qualificationTargetIdsText: (latestSeason?.qualificationTargetSeasonIds ?? []).join("\n"),
+    bracketType: latestSeason?.tournamentConfig?.bracketType ?? DEFAULT_TOURNAMENT_CONFIG.bracketType,
+    defaultFirstTo:
+      latestSeason?.tournamentConfig?.defaultFirstTo ?? DEFAULT_TOURNAMENT_CONFIG.defaultFirstTo,
+    grandFinalFirstTo:
+      latestSeason?.tournamentConfig?.grandFinalFirstTo ?? DEFAULT_TOURNAMENT_CONFIG.grandFinalFirstTo ?? 4,
+    hasBracketReset:
+      latestSeason?.tournamentConfig?.hasBracketReset ?? DEFAULT_TOURNAMENT_CONFIG.hasBracketReset,
     qualifierCount: latestSeason?.rules.qualifierCount ?? DEFAULT_LEAGUE_RULES.qualifierCount,
     lcqQualifierCount: latestSeason?.rules.lcqQualifierCount ?? DEFAULT_LEAGUE_RULES.lcqQualifierCount,
     roundRobinType: latestSeason?.rules.roundRobinType ?? DEFAULT_LEAGUE_RULES.roundRobinType,
@@ -390,6 +434,20 @@ export function AdminWorkspace() {
       year: createSeasonForm.year,
       order: createSeasonForm.order,
       priorSeasonId: createSeasonForm.priorSeasonId || null,
+      format: createSeasonForm.format,
+      category: createSeasonForm.category,
+      region: createSeasonForm.region,
+      parentSeasonId: createSeasonForm.parentSeasonId || null,
+      qualificationTargetSeasonIds: parseQualificationTargetIds(createSeasonForm.qualificationTargetIdsText),
+      tournamentConfig:
+        createSeasonForm.format === "tournament"
+          ? {
+              bracketType: createSeasonForm.bracketType,
+              defaultFirstTo: createSeasonForm.defaultFirstTo,
+              grandFinalFirstTo: createSeasonForm.grandFinalFirstTo,
+              hasBracketReset: createSeasonForm.hasBracketReset
+            }
+          : null,
       rules: {
         ...shell.season.rules,
         qualifierCount: createSeasonForm.qualifierCount,
@@ -415,15 +473,18 @@ export function AdminWorkspace() {
           manualInitialRating: null
         }))
       ],
-      matches: [
-        ...draftLeague.matches,
-        ...generateRoundRobinMatches(
-          nextSeason.id,
-          teamIds,
-          createSeasonForm.roundRobinType,
-          nextSeason.createdAt
-        )
-      ]
+      matches:
+        nextSeason.format === "league"
+          ? [
+              ...draftLeague.matches,
+              ...generateRoundRobinMatches(
+                nextSeason.id,
+                teamIds,
+                createSeasonForm.roundRobinType,
+                nextSeason.createdAt
+              )
+            ]
+          : draftLeague.matches
     };
 
     setDraftLeague(nextLeague);
@@ -469,7 +530,12 @@ export function AdminWorkspace() {
       ...draftLeague,
       seasons: remainingSeasons,
       seasonTeams: draftLeague.seasonTeams.filter((item) => item.seasonId !== selectedSeason.id),
-      matches: draftLeague.matches.filter((match) => match.seasonId !== selectedSeason.id)
+      matches: draftLeague.matches.filter((match) => match.seasonId !== selectedSeason.id),
+      seasonPhases: (draftLeague.seasonPhases ?? []).filter((phase) => phase.seasonId !== selectedSeason.id),
+      seasonEntries: (draftLeague.seasonEntries ?? []).filter((entry) => entry.seasonId !== selectedSeason.id),
+      qualificationLinks: (draftLeague.qualificationLinks ?? []).filter(
+        (link) => link.sourceSeasonId !== selectedSeason.id
+      )
     };
     const nextSelectedSeason = sortSeasons(remainingSeasons)[0] ?? null;
 
@@ -775,6 +841,53 @@ export function AdminWorkspace() {
                   </label>
 
                   <div className="grid gap-4">
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <label className="space-y-2 text-sm text-slate-600">
+                        <span>시즌 형식</span>
+                        <select
+                          value={createSeasonForm.format}
+                          onChange={(event) =>
+                            updateCreateSeasonForm("format", event.target.value as SeasonFormat)
+                          }
+                          className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                        >
+                          <option value="league">league</option>
+                          <option value="tournament">tournament</option>
+                        </select>
+                      </label>
+                      <label className="space-y-2 text-sm text-slate-600">
+                        <span>분류</span>
+                        <select
+                          value={createSeasonForm.category}
+                          onChange={(event) =>
+                            updateCreateSeasonForm("category", event.target.value as SeasonCategory)
+                          }
+                          className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                        >
+                          <option value="subregion">subregion</option>
+                          <option value="regional">regional</option>
+                          <option value="international">international</option>
+                        </select>
+                      </label>
+                      <label className="space-y-2 text-sm text-slate-600">
+                        <span>지역</span>
+                        <select
+                          value={createSeasonForm.region}
+                          onChange={(event) =>
+                            updateCreateSeasonForm("region", event.target.value as RegionCode)
+                          }
+                          className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                        >
+                          <option value="korea">korea</option>
+                          <option value="japan">japan</option>
+                          <option value="pacific">pacific</option>
+                          <option value="asia">asia</option>
+                          <option value="international">international</option>
+                          <option value="other">other</option>
+                        </select>
+                      </label>
+                    </div>
+
                     <label className="space-y-2 text-sm text-slate-600">
                       <span>이전 시즌 기준</span>
                       <select
@@ -789,6 +902,29 @@ export function AdminWorkspace() {
                           </option>
                         ))}
                       </select>
+                    </label>
+
+                    <label className="space-y-2 text-sm text-slate-600">
+                      <span>부모 시즌 ID</span>
+                      <input
+                        value={createSeasonForm.parentSeasonId}
+                        onChange={(event) => updateCreateSeasonForm("parentSeasonId", event.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                        placeholder="없으면 비워둠"
+                      />
+                    </label>
+
+                    <label className="space-y-2 text-sm text-slate-600">
+                      <span>다음 대회 ID 목록</span>
+                      <textarea
+                        rows={3}
+                        value={createSeasonForm.qualificationTargetIdsText}
+                        onChange={(event) =>
+                          updateCreateSeasonForm("qualificationTargetIdsText", event.target.value)
+                        }
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                        placeholder="한 줄에 하나씩 또는 쉼표로 구분"
+                      />
                     </label>
 
                     <div className="grid gap-4 md:grid-cols-2">
@@ -830,6 +966,7 @@ export function AdminWorkspace() {
                             )
                           }
                           className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                          disabled={createSeasonForm.format !== "league"}
                         >
                           <option value="single">single</option>
                           <option value="double">double</option>
@@ -860,6 +997,62 @@ export function AdminWorkspace() {
                         />
                       </label>
                     </div>
+
+                    {createSeasonForm.format === "tournament" ? (
+                      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        <label className="space-y-2 text-sm text-slate-600">
+                          <span>브래킷 타입</span>
+                          <select
+                            value={createSeasonForm.bracketType}
+                            onChange={(event) =>
+                              updateCreateSeasonForm("bracketType", event.target.value as BracketType)
+                            }
+                            className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                          >
+                            <option value="double_elimination">double_elimination</option>
+                            <option value="single_elimination">single_elimination</option>
+                            <option value="round_robin">round_robin</option>
+                            <option value="swiss">swiss</option>
+                            <option value="hybrid">hybrid</option>
+                          </select>
+                        </label>
+                        <label className="space-y-2 text-sm text-slate-600">
+                          <span>기본 FT</span>
+                          <input
+                            type="number"
+                            min={1}
+                            value={createSeasonForm.defaultFirstTo}
+                            onChange={(event) =>
+                              updateCreateSeasonForm("defaultFirstTo", Number(event.target.value))
+                            }
+                            className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                          />
+                        </label>
+                        <label className="space-y-2 text-sm text-slate-600">
+                          <span>결승 FT</span>
+                          <input
+                            type="number"
+                            min={1}
+                            value={createSeasonForm.grandFinalFirstTo}
+                            onChange={(event) =>
+                              updateCreateSeasonForm("grandFinalFirstTo", Number(event.target.value))
+                            }
+                            className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                          />
+                        </label>
+                        <label className="flex items-end gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={createSeasonForm.hasBracketReset}
+                            onChange={(event) =>
+                              updateCreateSeasonForm("hasBracketReset", event.target.checked)
+                            }
+                            className="h-4 w-4"
+                          />
+                          <span>브래킷 리셋 사용</span>
+                        </label>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
@@ -924,6 +1117,66 @@ export function AdminWorkspace() {
                     </label>
                   </div>
 
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <label className="space-y-2 text-sm text-slate-600">
+                      <span>시즌 형식</span>
+                      <select
+                        value={selectedSeason.format}
+                        onChange={(event) =>
+                          updateSeason(selectedSeason.id, (season) => ({
+                            ...season,
+                            format: event.target.value as SeasonFormat,
+                            tournamentConfig:
+                              event.target.value === "tournament"
+                                ? season.tournamentConfig ?? { ...DEFAULT_TOURNAMENT_CONFIG }
+                                : null
+                          }))
+                        }
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                      >
+                        <option value="league">league</option>
+                        <option value="tournament">tournament</option>
+                      </select>
+                    </label>
+                    <label className="space-y-2 text-sm text-slate-600">
+                      <span>분류</span>
+                      <select
+                        value={selectedSeason.category}
+                        onChange={(event) =>
+                          updateSeason(selectedSeason.id, (season) => ({
+                            ...season,
+                            category: event.target.value as SeasonCategory
+                          }))
+                        }
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                      >
+                        <option value="subregion">subregion</option>
+                        <option value="regional">regional</option>
+                        <option value="international">international</option>
+                      </select>
+                    </label>
+                    <label className="space-y-2 text-sm text-slate-600">
+                      <span>지역</span>
+                      <select
+                        value={selectedSeason.region}
+                        onChange={(event) =>
+                          updateSeason(selectedSeason.id, (season) => ({
+                            ...season,
+                            region: event.target.value as RegionCode
+                          }))
+                        }
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                      >
+                        <option value="korea">korea</option>
+                        <option value="japan">japan</option>
+                        <option value="pacific">pacific</option>
+                        <option value="asia">asia</option>
+                        <option value="international">international</option>
+                        <option value="other">other</option>
+                      </select>
+                    </label>
+                  </div>
+
                   <label className="space-y-2 text-sm text-slate-600">
                     <span>상태</span>
                     <select
@@ -960,9 +1213,38 @@ export function AdminWorkspace() {
                         .map((season) => (
                           <option key={season.id} value={season.id}>
                             {season.name}
-                          </option>
-                        ))}
+                      </option>
+                    ))}
                     </select>
+                  </label>
+
+                  <label className="space-y-2 text-sm text-slate-600">
+                    <span>부모 시즌 ID</span>
+                    <input
+                      value={selectedSeason.parentSeasonId ?? ""}
+                      onChange={(event) =>
+                        updateSeason(selectedSeason.id, (season) => ({
+                          ...season,
+                          parentSeasonId: event.target.value || null
+                        }))
+                      }
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                    />
+                  </label>
+
+                  <label className="space-y-2 text-sm text-slate-600">
+                    <span>다음 대회 ID 목록</span>
+                    <textarea
+                      rows={3}
+                      value={(selectedSeason.qualificationTargetSeasonIds ?? []).join("\n")}
+                      onChange={(event) =>
+                        updateSeason(selectedSeason.id, (season) => ({
+                          ...season,
+                          qualificationTargetSeasonIds: parseQualificationTargetIds(event.target.value)
+                        }))
+                      }
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                    />
                   </label>
                 </div>
               </div>
@@ -1023,11 +1305,92 @@ export function AdminWorkspace() {
                         }))
                       }
                       className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                      disabled={selectedSeason.format !== "league"}
                     >
                       <option value="single">single</option>
                       <option value="double">double</option>
                     </select>
                   </label>
+
+                  {selectedSeason.format === "tournament" ? (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className="space-y-2 text-sm text-slate-600">
+                        <span>브래킷 타입</span>
+                        <select
+                          value={selectedSeason.tournamentConfig?.bracketType ?? DEFAULT_TOURNAMENT_CONFIG.bracketType}
+                          onChange={(event) =>
+                            updateSeason(selectedSeason.id, (season) => ({
+                              ...season,
+                              tournamentConfig: {
+                                ...(season.tournamentConfig ?? DEFAULT_TOURNAMENT_CONFIG),
+                                bracketType: event.target.value as BracketType
+                              }
+                            }))
+                          }
+                          className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                        >
+                          <option value="double_elimination">double_elimination</option>
+                          <option value="single_elimination">single_elimination</option>
+                          <option value="round_robin">round_robin</option>
+                          <option value="swiss">swiss</option>
+                          <option value="hybrid">hybrid</option>
+                        </select>
+                      </label>
+                      <label className="space-y-2 text-sm text-slate-600">
+                        <span>기본 FT</span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={selectedSeason.tournamentConfig?.defaultFirstTo ?? DEFAULT_TOURNAMENT_CONFIG.defaultFirstTo}
+                          onChange={(event) =>
+                            updateSeason(selectedSeason.id, (season) => ({
+                              ...season,
+                              tournamentConfig: {
+                                ...(season.tournamentConfig ?? DEFAULT_TOURNAMENT_CONFIG),
+                                defaultFirstTo: Number(event.target.value)
+                              }
+                            }))
+                          }
+                          className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                        />
+                      </label>
+                      <label className="space-y-2 text-sm text-slate-600">
+                        <span>결승 FT</span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={selectedSeason.tournamentConfig?.grandFinalFirstTo ?? DEFAULT_TOURNAMENT_CONFIG.grandFinalFirstTo ?? 4}
+                          onChange={(event) =>
+                            updateSeason(selectedSeason.id, (season) => ({
+                              ...season,
+                              tournamentConfig: {
+                                ...(season.tournamentConfig ?? DEFAULT_TOURNAMENT_CONFIG),
+                                grandFinalFirstTo: Number(event.target.value)
+                              }
+                            }))
+                          }
+                          className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                        />
+                      </label>
+                      <label className="flex items-end gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={selectedSeason.tournamentConfig?.hasBracketReset ?? DEFAULT_TOURNAMENT_CONFIG.hasBracketReset}
+                          onChange={(event) =>
+                            updateSeason(selectedSeason.id, (season) => ({
+                              ...season,
+                              tournamentConfig: {
+                                ...(season.tournamentConfig ?? DEFAULT_TOURNAMENT_CONFIG),
+                                hasBracketReset: event.target.checked
+                              }
+                            }))
+                          }
+                          className="h-4 w-4"
+                        />
+                        <span>브래킷 리셋 사용</span>
+                      </label>
+                    </div>
+                  ) : null}
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="space-y-2 text-sm text-slate-600">

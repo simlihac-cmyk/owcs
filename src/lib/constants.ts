@@ -1,4 +1,4 @@
-import { LeagueRules, SimulationConfig } from "@/lib/types";
+import { LeagueRules, SimulationConfig, TournamentConfig } from "@/lib/types";
 
 export const DEFAULT_LEAGUE_RULES: LeagueRules = {
   qualifierCount: 4,
@@ -14,6 +14,13 @@ export const DEFAULT_SIMULATION_CONFIG: SimulationConfig = {
   shrinkageMatches: 5,
   opponentStrengthWeight: 0.42,
   setSkewFactor: 1.18
+};
+
+export const DEFAULT_TOURNAMENT_CONFIG: TournamentConfig = {
+  bracketType: "double_elimination",
+  defaultFirstTo: 3,
+  grandFinalFirstTo: 4,
+  hasBracketReset: false
 };
 
 export const RESULT_OPTIONS = ["3:0", "3:1", "3:2", "2:3", "1:3", "0:3"] as const;
