@@ -1215,7 +1215,7 @@ export function TournamentSeasonDetail(props: { league: League; season: Season }
         ])
       );
       const records = buildCurrentSeasonRecords(phaseSeason, phaseMatches);
-      const standings = sortStandings(records, phaseTeamNames, sourceSeason.rules);
+      const standings = sortStandings(records, phaseTeamNames, sourceSeason.rules, phaseMatches);
 
       for (const standing of standings) {
         placementsByKey[`${phaseId}:${standing.rank}`] = standing.teamId;

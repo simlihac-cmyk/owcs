@@ -249,8 +249,9 @@ function buildTeamTrends(
 function buildTiebreakNotes(insight: {
   season: Season;
   standings: SeasonInsight["currentStandings"];
+  matches: Match[];
 }): TiebreakNote[] {
-  const { season, standings } = insight;
+  const { season, standings, matches } = insight;
   const notes: TiebreakNote[] = [];
 
   for (let index = 0; index < standings.length - 1; index += 1) {
@@ -271,7 +272,42 @@ function buildTiebreakNotes(insight: {
         break;
       }
 
-      if (tiebreaker === "setsWon" && higher.setsWon !== lower.setsWon) {
+      if (tiebreaker === "setDiff" && higher.setDiff === lower.setDiff) {
+        const tiedTeams = standings.filter(
+          (standing) => standing.wins === higher.wins && standing.setDiff === higher.setDiff
+        );
+
+        if (tiedTeams.length === 2) {
+          const headToHeadMatches = matches.filter((match) => {
+            if (!match.played || !match.result || match.result.setsA === match.result.setsB) {
+              return false;
+            }
+
+            return (
+              (match.teamAId === higher.teamId && match.teamBId === lower.teamId) ||
+              (match.teamAId === lower.teamId && match.teamBId === higher.teamId)
+            );
+          });
+          const higherWins = headToHeadMatches.filter((match) => {
+            if (!match.result) {
+              return false;
+            }
+
+            return (
+              (match.teamAId === higher.teamId && match.result.setsA > match.result.setsB) ||
+              (match.teamBId === higher.teamId && match.result.setsB > match.result.setsA)
+            );
+          }).length;
+          const lowerWins = headToHeadMatches.length - higherWins;
+
+          if (higherWins !== lowerWins) {
+            reasons.push(`승자승 ${higherWins}승 ${lowerWins}패`);
+            break;
+          }
+        }
+      }
+
+      if (tiebreaker === "setsWon" && higher.setDiff !== lower.setDiff && higher.setsWon !== lower.setsWon) {
         reasons.push(`세트 득 ${higher.setsWon} 대 ${lower.setsWon}`);
         break;
       }
@@ -709,7 +745,8 @@ export function computeSeasonInsight(
     remainingMatchInsights,
     tiebreakNotes: buildTiebreakNotes({
       season,
-      standings: core.aggregate.standings
+      standings: core.aggregate.standings,
+      matches: seasonMatches
     }),
     teamTrends: buildTeamTrends(core.probabilitySummaries, previousSeasonStats),
     priorBlend: {
