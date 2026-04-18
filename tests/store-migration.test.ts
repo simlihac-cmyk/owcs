@@ -55,7 +55,7 @@ describe("league store migration", () => {
     expect(sampleSeason?.rules.lcqQualifierCount).toBe(4);
   });
 
-  it("refreshes untouched bundled sample workspaces to the latest bundled results", () => {
+  it("keeps existing workspaces intact while bumping the sample data version", () => {
     const staleBundledLeague = rewindRecentResults(loadSampleLeague());
     const migrated = migratePersistedLeagueStore({
       league: staleBundledLeague,
@@ -69,20 +69,20 @@ describe("league store migration", () => {
     });
 
     expect(getMatchResultSnapshot(migrated.league!, "s2026_25")).toEqual({
-      played: true,
-      result: { setsA: 3, setsB: 0 }
+      played: false,
+      result: null
     });
     expect(getMatchResultSnapshot(migrated.league!, "s2026_26")).toEqual({
-      played: true,
-      result: { setsA: 0, setsB: 3 }
+      played: false,
+      result: null
     });
     expect(getMatchResultSnapshot(migrated.league!, "s2026_27")).toEqual({
-      played: true,
-      result: { setsA: 3, setsB: 0 }
+      played: false,
+      result: null
     });
     expect(getMatchResultSnapshot(migrated.baselineLeague!, "s2026_25")).toEqual({
-      played: true,
-      result: { setsA: 3, setsB: 0 }
+      played: false,
+      result: null
     });
     expect(migrated.sampleDataVersion).toBe(SAMPLE_DATA_VERSION);
     expect(migrated.usesBundledSample).toBe(true);
@@ -117,5 +117,21 @@ describe("league store migration", () => {
     });
     expect(migrated.sampleDataVersion).toBe(SAMPLE_DATA_VERSION);
     expect(migrated.usesBundledSample).toBe(false);
+  });
+
+  it("starts from an empty placeholder league before the server baseline arrives", () => {
+    const migrated = migratePersistedLeagueStore(undefined);
+
+    expect(migrated.league).toMatchObject({
+      id: "owcs_archive",
+      seasons: [],
+      matches: []
+    });
+    expect(migrated.baselineLeague).toMatchObject({
+      id: "owcs_archive",
+      seasons: [],
+      matches: []
+    });
+    expect(migrated.sampleDataVersion).toBe(SAMPLE_DATA_VERSION);
   });
 });

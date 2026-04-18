@@ -21,6 +21,10 @@ function isLeaguePayload(value: unknown): value is League {
   );
 }
 
+function isExpectedUpdatedAt(value: unknown): value is string | null | undefined {
+  return value === undefined || value === null || typeof value === "string";
+}
+
 export async function GET() {
   const payload = await readAdminLeague();
 
@@ -32,12 +36,42 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { league?: unknown };
+  const body = (await request.json()) as { league?: unknown; expectedUpdatedAt?: unknown };
 
   if (!isLeaguePayload(body.league)) {
     return NextResponse.json(
       { message: "리그 데이터 형식이 올바르지 않습니다." },
       { status: 400 }
+    );
+  }
+
+  if (!isExpectedUpdatedAt(body.expectedUpdatedAt)) {
+    return NextResponse.json(
+      { message: "기준 저장 시각 형식이 올바르지 않습니다." },
+      { status: 400 }
+    );
+  }
+
+  const current = await readAdminLeague();
+  const expectedUpdatedAt = body.expectedUpdatedAt ?? null;
+
+  if (body.expectedUpdatedAt !== undefined && current.updatedAt !== expectedUpdatedAt) {
+    return NextResponse.json(
+      {
+        league: current.league,
+        source: current.source,
+        filePath: current.filePath,
+        updatedAt: current.updatedAt,
+        conflict: true,
+        message:
+          "다른 작업자가 관리자 원본을 먼저 저장했습니다. 최신 원본을 다시 불러온 뒤 초안을 다시 적용해 주세요."
+      },
+      {
+        status: 409,
+        headers: {
+          "Cache-Control": "no-store"
+        }
+      }
     );
   }
 

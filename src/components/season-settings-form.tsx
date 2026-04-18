@@ -204,6 +204,10 @@ export function SeasonSettingsForm({
         <p className="mt-2 text-sm leading-6 text-slate-500">
           팀 구성, prior 시즌, 진출 팀 수, 타이브레이커 순서, 시뮬레이션 설정을 여기서 조정할 수 있습니다.
         </p>
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          참고: 정확히 두 팀이 승수와 세트 득실까지 같으면 승자승을 먼저 적용합니다. 아래 선택값은 그 밖의
+          잔여 동률 판단 순서를 정합니다.
+        </p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
@@ -311,7 +315,7 @@ export function SeasonSettingsForm({
                 >
                   <option value="wins">승수</option>
                   <option value="setDiff">세트 득실</option>
-                  <option value="setsWon">세트 획득</option>
+                  <option value="setsWon">세트 획득(잔여 동률)</option>
                 </select>
               </label>
             ))}

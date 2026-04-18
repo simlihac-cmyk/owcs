@@ -28,6 +28,7 @@ interface AdminLeagueResponse {
   filePath: string;
   updatedAt: string | null;
   message?: string;
+  conflict?: boolean;
 }
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -216,6 +217,7 @@ export function AdminWorkspace() {
   const [error, setError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [statusMessage, setStatusMessage] = useState("관리자 원본 데이터를 불러오는 중입니다.");
+  const [hasSaveConflict, setHasSaveConflict] = useState(false);
   const [showCreateSeasonForm, setShowCreateSeasonForm] = useState(false);
   const [createSeasonForm, setCreateSeasonForm] = useState<CreateSeasonFormState | null>(null);
 
@@ -262,6 +264,7 @@ export function AdminWorkspace() {
       setFilePath(payload.filePath);
       setUpdatedAt(payload.updatedAt);
       setSaveState("idle");
+      setHasSaveConflict(false);
       setCreateSeasonForm(buildCreateSeasonFormState(payload.league));
       setStatusMessage(
         payload.source === "file"
@@ -276,6 +279,19 @@ export function AdminWorkspace() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleDiscardDraft() {
+    if (!serverLeague) {
+      return;
+    }
+
+    setDraftLeague(serverLeague);
+    setCreateSeasonForm(buildCreateSeasonFormState(serverLeague));
+    setHasSaveConflict(false);
+    setSaveState("idle");
+    setError(null);
+    setStatusMessage("최신 관리자 원본 기준으로 초안을 되돌렸습니다.");
   }
 
   useEffect(() => {
@@ -562,9 +578,28 @@ export function AdminWorkspace() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          league: draftLeague
+          league: draftLeague,
+          expectedUpdatedAt: updatedAt
         })
       });
+
+      if (response.status === 409) {
+        const payload = (await response.json()) as AdminLeagueResponse;
+
+        setServerLeague(payload.league);
+        setSource(payload.source);
+        setFilePath(payload.filePath);
+        setUpdatedAt(payload.updatedAt);
+        setHasSaveConflict(true);
+        setSaveState("error");
+
+        const message =
+          payload.message ??
+          "다른 작업자가 관리자 원본을 먼저 저장했습니다. 최신 원본을 다시 불러온 뒤 초안을 다시 적용해 주세요.";
+        setError(message);
+        setStatusMessage(message);
+        return;
+      }
 
       if (!response.ok) {
         const payload = (await response.json()) as { message?: string };
@@ -577,6 +612,7 @@ export function AdminWorkspace() {
       setSource(payload.source);
       setFilePath(payload.filePath);
       setUpdatedAt(payload.updatedAt);
+      setHasSaveConflict(false);
       setSaveState("saved");
       setStatusMessage(payload.message ?? "관리자 원본 데이터를 저장했습니다.");
     } catch (saveError) {
@@ -739,10 +775,18 @@ export function AdminWorkspace() {
                   </button>
                   <span
                     className={`rounded-full px-3 py-2 text-xs font-semibold ${
-                      isDirty ? "ow-status-ready" : "ow-status-done"
+                      hasSaveConflict
+                        ? "bg-amber-100 text-amber-800"
+                        : isDirty
+                          ? "ow-status-ready"
+                          : "ow-status-done"
                     }`}
                   >
-                    {isDirty ? "저장되지 않은 변경사항 있음" : "원본과 동기화됨"}
+                    {hasSaveConflict
+                      ? "원본 충돌 감지됨"
+                      : isDirty
+                        ? "저장되지 않은 변경사항 있음"
+                        : "원본과 동기화됨"}
                   </span>
                   <button
                     type="button"
@@ -754,7 +798,7 @@ export function AdminWorkspace() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDraftLeague(serverLeague)}
+                    onClick={handleDiscardDraft}
                     disabled={!isDirty || !serverLeague}
                     className="ow-ghost-button rounded-full px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-45"
                   >
@@ -763,7 +807,7 @@ export function AdminWorkspace() {
                   <button
                     type="button"
                     onClick={() => void handleSave()}
-                    disabled={!isDirty || saveState === "saving"}
+                    disabled={!isDirty || saveState === "saving" || hasSaveConflict}
                     className="ow-primary-button rounded-full px-5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55"
                   >
                     {saveState === "saving" ? "저장 중..." : "원본 저장"}
@@ -774,6 +818,12 @@ export function AdminWorkspace() {
               <p className={`mt-4 text-sm ${error ? "text-red-600" : "text-slate-500"}`}>
                 {statusMessage}
               </p>
+              {hasSaveConflict ? (
+                <p className="mt-2 text-sm text-amber-700">
+                  최신 원본이 먼저 바뀌었습니다. `다시 불러오기`로 새 원본을 받고, 필요하면 `변경 취소`로 최신
+                  기준에서 다시 수정해 주세요.
+                </p>
+              ) : null}
             </div>
 
             {showCreateSeasonForm && createSeasonForm ? (

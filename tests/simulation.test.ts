@@ -1,4 +1,4 @@
-import { computeSeasonInsight } from "@/lib/domain/simulation";
+import { computeSeasonInsight, prepareSeasonInsightLeague } from "@/lib/domain/simulation";
 import { loadSampleLeague } from "@/lib/dataProviders/sampleLeague";
 
 const OWCS_BALANCED_CONFIG = {
@@ -184,5 +184,22 @@ describe("simulation engine", () => {
     expect(contenderMatch).toBeDefined();
     expect(lopsidedMatch).toBeDefined();
     expect(contenderMatch!.importanceScore).toBeGreaterThan(lopsidedMatch!.importanceScore);
+  });
+
+  it("builds a season-scoped simulation league before running the worker", () => {
+    const league = loadSampleLeague();
+    const reducedLeague = prepareSeasonInsightLeague(league, "season_2026_stage1", {
+      s2026_25: { setsA: 3, setsB: 2 }
+    });
+
+    expect(reducedLeague.seasons.map((season) => season.id).sort()).toEqual([
+      "season_2025_stage3",
+      "season_2026_stage1"
+    ]);
+    expect(reducedLeague.matches.every((match) => ["season_2025_stage3", "season_2026_stage1"].includes(match.seasonId))).toBe(true);
+    expect(reducedLeague.matches.find((match) => match.id === "s2026_25")).toMatchObject({
+      played: true,
+      result: { setsA: 3, setsB: 2 }
+    });
   });
 });

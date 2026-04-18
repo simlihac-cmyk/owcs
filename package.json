@@ -1,6 +1,6 @@
 {
   "name": "league-probability-archive",
-  "version": "1.0.6",
+  "version": "1.0.61",
   "private": true,
   "scripts": {
     "dev": "next dev",

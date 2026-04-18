@@ -136,7 +136,7 @@ export function MobileSummaryCards(props: {
     <div className="grid gap-3 md:hidden">
       <div className="ow-appear flex items-center justify-between gap-3 rounded-[24px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.8)_0%,rgba(244,248,252,0.84)_100%)] px-4 py-3 shadow-panel">
         <div>
-          <p className="text-sm font-semibold text-slate-950">모바일 팀 요약</p>
+          <p className="text-sm font-semibold text-slate-950">모바일 요약</p>
           <p className="text-xs text-slate-700">전체 {orderedSummaries.length}팀의 핵심 지표를 한 번에 확인합니다.</p>
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
@@ -229,7 +229,7 @@ export function UpcomingPredictionSpotlight(props: {
       <section className="ow-cut-panel ow-appear overflow-hidden bg-[linear-gradient(135deg,rgba(255,250,242,0.98)_0%,rgba(255,244,225,0.96)_100%)] px-6 py-6 text-[var(--ow-text)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="ow-kicker text-[#8a5720]">Main Forecast</p>
+            <p className="ow-kicker text-[#8a5720]">메인 예측</p>
             <h3 className="mt-2 text-2xl font-semibold text-ink">다음 경기 승부 예측</h3>
             <p className="mt-3 text-sm leading-6 text-slate-700">
               현재 표시할 예정 경기 예측이 없습니다. 결과가 모두 반영됐거나 시즌이 종료된 상태입니다.
@@ -247,7 +247,7 @@ export function UpcomingPredictionSpotlight(props: {
     <section className="ow-cut-panel ow-appear overflow-hidden bg-[linear-gradient(135deg,rgba(255,250,242,0.98)_0%,rgba(255,244,225,0.96)_100%)] px-6 py-6 text-[var(--ow-text)]">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl">
-          <p className="ow-kicker text-[#8a5720]">Main Forecast</p>
+          <p className="ow-kicker text-[#8a5720]">메인 예측</p>
           <h3 className="mt-2 text-[clamp(1.7rem,2.7vw,2.5rem)] font-semibold text-ink">
             {getUpcomingPredictionTitle(spotlight.mode)}
           </h3>
@@ -320,8 +320,8 @@ export function UpcomingPredictionSpotlight(props: {
                       {formatPercent(item.teamAWinProbability, 1)}
                     </p>
                   </div>
-                  <div className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Win Rate
+                  <div className="text-center text-xs font-semibold tracking-[0.18em] text-slate-500">
+                    승률
                   </div>
                   <div className="min-w-0 text-right">
                     <p className="truncate text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
@@ -369,8 +369,8 @@ export function UpcomingPredictionSpotlight(props: {
                     key={`${item.matchId}-${resultLabel}`}
                     className="rounded-2xl border border-slate-200/70 bg-white px-3 py-3 text-sm text-slate-700"
                   >
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Result
+                    <p className="text-[11px] font-semibold tracking-[0.16em] text-slate-500">
+                      결과
                     </p>
                     <p className="mt-1 text-lg font-semibold text-ink">{resultLabel}</p>
                     <p className="mt-1 text-xs font-semibold text-slate-700">

@@ -12,7 +12,7 @@ import {
 } from "@/components/season-dashboard-panels";
 import { ProbabilityTable } from "@/components/probability-table";
 import { RankingTable } from "@/components/ranking-table";
-import { Panel, StatCard } from "@/components/season-shared";
+import { ExpandablePanel, Panel, StatCard } from "@/components/season-shared";
 import { TeamPage } from "@/components/team-page";
 import { TournamentSeasonDetail } from "@/components/tournament-season-detail";
 import {
@@ -301,12 +301,12 @@ export function SeasonDetail({
     return <TournamentSeasonDetail league={league} season={season} />;
   }
 
-  return (
+	  return (
     <div className="space-y-6">
       <section className="ow-cut-panel ow-hero-panel ow-appear ow-stagger-1 px-6 py-7 text-[var(--ow-text)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="ow-kicker">Season Focus</p>
+            <p className="ow-kicker">시즌 개요</p>
             <h1 className="ow-display-title mt-3 text-[clamp(2.4rem,4vw,4.2rem)]">{season.name}</h1>
             <p className="mt-4 max-w-2xl text-[0.98rem] leading-7 text-[var(--ow-muted)]">{heroSummary}</p>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -321,7 +321,7 @@ export function SeasonDetail({
 
           <div className="ow-panel-light min-w-[290px] max-w-[420px] px-4 py-4 text-sm text-[var(--ow-text)]">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ow-muted)]">
-              이번 시즌 한눈에
+              이번 시즌 체크포인트
             </p>
             <div className="mt-3 space-y-2">
               <p>비교 기준 시즌: {priorSeason?.name ?? "직전 데이터 없음 / 수동 기준값 사용"}</p>
@@ -377,7 +377,7 @@ export function SeasonDetail({
         </div>
       ) : null}
 
-      {activeTab === "dashboard" && insight ? (
+	      {activeTab === "dashboard" && insight ? (
         <div className="space-y-6 ow-appear ow-stagger-3">
           {season.status !== "completed" || insight.remainingMatchInsights.length > 0 ? (
             <UpcomingPredictionSpotlight insight={insight} teamMap={teamMap} isLoading={isLoading} />
@@ -416,14 +416,8 @@ export function SeasonDetail({
             </Panel>
           </div>
 
-          <ProbabilityTable
-            summaries={insight.probabilitySummaries}
-            teamNameById={teamMap}
-            decimalPlaces={season.simulationConfig.decimalPlaces}
-          />
-
           <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-            <Panel title="중요 경기 캘린더">
+            <Panel title="중요 경기 일정">
               {insight.remainingMatchInsights.length === 0 ? (
                 <p className="text-sm text-slate-700">남은 경기가 없습니다.</p>
               ) : (
@@ -431,235 +425,274 @@ export function SeasonDetail({
               )}
             </Panel>
 
-            <Panel title="경기 결과별 영향">
-              {selectedMatchImpact ? (
-                <div className="space-y-4">
-                  <label htmlFor="impact-match-select" className="sr-only">
-                    영향 분석 경기 선택
-                  </label>
-                  <select
-                    id="impact-match-select"
-                    value={selectedImpactMatchId}
-                    onChange={(event) => setSelectedImpactMatchId(event.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-[var(--ow-text)]"
-                  >
-                    {insight.remainingMatchInsights.map((item) => (
-                      <option key={item.matchId} value={item.matchId}>
-                        {teamMap[item.teamAId]} vs {teamMap[item.teamBId]} · {formatDateLabel(item.scheduledAt)}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className="flex flex-wrap gap-2" aria-label="영향 지표 선택">
-                    {availableImpactMetricOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setSelectedImpactMetric(option.value)}
-                        aria-pressed={selectedImpactMetric === option.value}
-                        className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
-                          selectedImpactMetric === option.value ? "ow-primary-button" : "ow-ghost-button"
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
-                    기본 예측: {teamMap[selectedMatchImpact.teamAId]} 승률{" "}
-                    {formatPercent(selectedMatchImpact.teamAWinProbability, 1)} / {teamMap[selectedMatchImpact.teamBId]} 승률{" "}
-                    {formatPercent(selectedMatchImpact.teamBWinProbability, 1)}
-                  </div>
-
-                  <div className="space-y-3">
-                    {selectedMatchImpact.outcomes.map((outcome) => (
-                      <div key={outcome.resultLabel} className="rounded-2xl border border-slate-200/70 px-4 py-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <p className="font-semibold text-ink">결과 {outcome.resultLabel}</p>
-                            <p className="mt-1 text-xs text-slate-700">
-                              가장 민감한 팀:{" "}
-                              {selectedMatchImpact.biggestSwingTeamId
-                                ? teamMap[selectedMatchImpact.biggestSwingTeamId]
-                                : "-"}{" "}
-                              · 기준 지표 {getImpactMetricLabel(selectedImpactMetric)}
-                            </p>
-                          </div>
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                            사전 확률 {formatPercent(selectedMatchImpact.resultProbabilities[outcome.resultLabel] ?? 0, 1)}
-                          </span>
-                        </div>
-
-                        <div className="mt-3 grid auto-rows-fr gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                          {orderedTeamIds.map((teamId) => {
-                            const baseSummary = insight.probabilitySummaries.find(
-                              (summary) => summary.teamId === teamId
-                            );
-
-                            if (!baseSummary) {
-                              return null;
-                            }
-
-                            const baseValue = getMetricValueFromSummary(
-                              baseSummary,
-                              selectedImpactMetric,
-                              season.rules.qualifierCount,
-                              season.rules.lcqQualifierCount,
-                              season.teamIds.length
-                            );
-                            const nextValue = getMetricValueFromOutcome(
-                              outcome,
-                              teamId,
-                              selectedImpactMetric,
-                              season.rules.qualifierCount,
-                              season.rules.lcqQualifierCount,
-                              season.teamIds.length
-                            );
-                            const delta =
-                              selectedImpactMetric === "averageRank"
-                                ? baseValue - nextValue
-                                : nextValue - baseValue;
-                            const brand = getTeamBrand(teamId);
-
-                            return (
-                              <div
-                                key={teamId}
-                                className="flex h-full flex-col rounded-xl px-3 py-3 text-sm"
-                                style={{ backgroundColor: brand.soft }}
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="font-semibold text-ink">{teamMap[teamId] ?? teamId}</span>
-                                  <span
-                                    className={`font-semibold ${
-                                      delta > 0 ? "text-pine" : delta < 0 ? "text-coral" : "text-slate-700"
-                                    }`}
-                                  >
-                                    {formatImpactDelta(delta, selectedImpactMetric)}
-                                  </span>
-                                </div>
-                                <p className="mt-auto pt-1 text-xs text-slate-700">
-                                  {getImpactMetricLabel(selectedImpactMetric)}{" "}
-                                  {formatImpactMetricValue(nextValue, selectedImpactMetric)}
-                                </p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-slate-700">영향을 분석할 남은 경기가 없습니다.</p>
-              )}
-            </Panel>
-          </div>
-
-          <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
-            <Panel
-              title="예측 기준과 팀 전력"
-              description="직전 시즌 기록과 현재 시즌 경기력을 함께 반영한 기준 전력입니다."
-            >
-              <div className="mb-4 grid gap-3 md:grid-cols-2">
+            <Panel title="레이스 흐름 요약" description="지금 시즌 레이스를 빠르게 이해할 수 있는 핵심 지표입니다.">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
-                  시즌 진행률 {formatPercent(insight.priorBlend.completionRatio, 1)}
+                  비교 기준 시즌: {priorSeason?.name ?? "직전 데이터 없음"}
                 </div>
                 <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
                   현재 시즌 반영 비중 {formatPercent(insight.priorBlend.currentWeight, 1)}
                 </div>
                 <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
-                  직전 시즌 감소 계수 {formatDecimal(season.simulationConfig.priorWeightDecay, 2)}
+                  영향 분석 대상 경기 {insight.remainingMatchInsights.length}개
                 </div>
                 <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
-                  상대 전력 반영 비중 {formatPercent(season.simulationConfig.opponentStrengthWeight * 100, 0)}
+                  설명이 필요한 동률 구간 {insight.tiebreakNotes.length}건
                 </div>
               </div>
-              <div className="space-y-3">
-                {insight.ratingBreakdowns.map((item) => {
-                  const brand = getTeamBrand(item.teamId);
-                  return (
-                    <div key={item.teamId} className="rounded-2xl border border-slate-200/70 px-4 py-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <span className="h-3 w-3 rounded-full" style={{ backgroundColor: brand.primary }} />
-                          <div>
-                            <p className="font-semibold text-ink">{teamMap[item.teamId] ?? item.teamId}</p>
-                            <p className="mt-1 text-xs text-slate-700">
-                              {item.previousSeasonRank
-                                ? `직전 시즌 ${item.previousSeasonRank}위`
-                                : "직전 시즌 데이터 없음"}
-                              {item.manualInitialRating !== null ? " · 수동 초기 rating 사용" : ""}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-semibold" style={{ color: brand.primary }}>
-                            {formatRating(item.blendedRating)}
+            </Panel>
+          </div>
+
+          <ExpandablePanel
+            title="전체 확률표"
+            description="모든 팀의 순위별 확률 분포를 표 형태로 자세히 확인할 수 있습니다."
+            summaryNote="기본은 접힘"
+          >
+            <ProbabilityTable
+              summaries={insight.probabilitySummaries}
+              teamNameById={teamMap}
+              decimalPlaces={season.simulationConfig.decimalPlaces}
+            />
+          </ExpandablePanel>
+
+          <ExpandablePanel
+            title="경기 결과별 영향"
+            description="개별 경기 결과가 시드 경쟁과 예상 순위에 얼마나 영향을 주는지 자세히 봅니다."
+            summaryNote={selectedMatchImpact ? `${teamMap[selectedMatchImpact.teamAId]} vs ${teamMap[selectedMatchImpact.teamBId]}` : "분석 경기 선택"}
+          >
+            {selectedMatchImpact ? (
+              <div className="space-y-4">
+                <label htmlFor="impact-match-select" className="sr-only">
+                  영향 분석 경기 선택
+                </label>
+                <select
+                  id="impact-match-select"
+                  value={selectedImpactMatchId}
+                  onChange={(event) => setSelectedImpactMatchId(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-[var(--ow-text)]"
+                >
+                  {insight.remainingMatchInsights.map((item) => (
+                    <option key={item.matchId} value={item.matchId}>
+                      {teamMap[item.teamAId]} vs {teamMap[item.teamBId]} · {formatDateLabel(item.scheduledAt)}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="flex flex-wrap gap-2" aria-label="영향 지표 선택">
+                  {availableImpactMetricOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setSelectedImpactMetric(option.value)}
+                      aria-pressed={selectedImpactMetric === option.value}
+                      className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                        selectedImpactMetric === option.value ? "ow-primary-button" : "ow-ghost-button"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                  기본 예측: {teamMap[selectedMatchImpact.teamAId]} 승률{" "}
+                  {formatPercent(selectedMatchImpact.teamAWinProbability, 1)} / {teamMap[selectedMatchImpact.teamBId]} 승률{" "}
+                  {formatPercent(selectedMatchImpact.teamBWinProbability, 1)}
+                </div>
+
+                <div className="space-y-3">
+                  {selectedMatchImpact.outcomes.map((outcome) => (
+                    <div key={outcome.resultLabel} className="rounded-2xl border border-slate-200/70 px-4 py-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-ink">결과 {outcome.resultLabel}</p>
+                          <p className="mt-1 text-xs text-slate-700">
+                            가장 민감한 팀:{" "}
+                            {selectedMatchImpact.biggestSwingTeamId
+                              ? teamMap[selectedMatchImpact.biggestSwingTeamId]
+                              : "-"}{" "}
+                            · 기준 지표 {getImpactMetricLabel(selectedImpactMetric)}
                           </p>
-                          <p className="text-xs text-slate-700">현재 기준 전력</p>
                         </div>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                          사전 확률 {formatPercent(selectedMatchImpact.resultProbabilities[outcome.resultLabel] ?? 0, 1)}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 grid auto-rows-fr gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                        {orderedTeamIds.map((teamId) => {
+                          const baseSummary = insight.probabilitySummaries.find(
+                            (summary) => summary.teamId === teamId
+                          );
+
+                          if (!baseSummary) {
+                            return null;
+                          }
+
+                          const baseValue = getMetricValueFromSummary(
+                            baseSummary,
+                            selectedImpactMetric,
+                            season.rules.qualifierCount,
+                            season.rules.lcqQualifierCount,
+                            season.teamIds.length
+                          );
+                          const nextValue = getMetricValueFromOutcome(
+                            outcome,
+                            teamId,
+                            selectedImpactMetric,
+                            season.rules.qualifierCount,
+                            season.rules.lcqQualifierCount,
+                            season.teamIds.length
+                          );
+                          const delta =
+                            selectedImpactMetric === "averageRank"
+                              ? baseValue - nextValue
+                              : nextValue - baseValue;
+                          const brand = getTeamBrand(teamId);
+
+                          return (
+                            <div
+                              key={teamId}
+                              className="flex h-full flex-col rounded-xl px-3 py-3 text-sm"
+                              style={{ backgroundColor: brand.soft }}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-semibold text-ink">{teamMap[teamId] ?? teamId}</span>
+                                <span
+                                  className={`font-semibold ${
+                                    delta > 0 ? "text-pine" : delta < 0 ? "text-coral" : "text-slate-700"
+                                  }`}
+                                >
+                                  {formatImpactDelta(delta, selectedImpactMetric)}
+                                </span>
+                              </div>
+                              <p className="mt-auto pt-1 text-xs text-slate-700">
+                                {getImpactMetricLabel(selectedImpactMetric)}{" "}
+                                {formatImpactMetricValue(nextValue, selectedImpactMetric)}
+                              </p>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </Panel>
+            ) : (
+              <p className="text-sm text-slate-700">영향을 분석할 남은 경기가 없습니다.</p>
+            )}
+          </ExpandablePanel>
 
-            <div className="space-y-6">
-              <Panel title="직전 시즌 대비 기대 순위 변화">
+          <ExpandablePanel
+            title="예측 근거와 세부 메모"
+            description="전력 산정 근거, 직전 시즌 대비 변화, 동률 메모를 펼쳐서 확인할 수 있습니다."
+            summaryNote="상세 설명"
+          >
+            <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+              <Panel
+                title="예측 기준과 팀 전력"
+                description="직전 시즌 기록과 현재 시즌 경기력을 함께 반영한 기준 전력입니다."
+              >
+                <div className="mb-4 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                    시즌 진행률 {formatPercent(insight.priorBlend.completionRatio, 1)}
+                  </div>
+                  <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                    현재 시즌 반영 비중 {formatPercent(insight.priorBlend.currentWeight, 1)}
+                  </div>
+                  <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                    직전 시즌 감소 계수 {formatDecimal(season.simulationConfig.priorWeightDecay, 2)}
+                  </div>
+                  <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                    상대 전력 반영 비중 {formatPercent(season.simulationConfig.opponentStrengthWeight * 100, 0)}
+                  </div>
+                </div>
                 <div className="space-y-3">
-                  {insight.teamTrends.map((trend) => {
-                    const brand = getTeamBrand(trend.teamId);
+                  {insight.ratingBreakdowns.map((item) => {
+                    const brand = getTeamBrand(item.teamId);
                     return (
-                      <div key={trend.teamId} className="rounded-2xl px-4 py-4" style={{ backgroundColor: brand.soft }}>
+                      <div key={item.teamId} className="rounded-2xl border border-slate-200/70 px-4 py-4">
                         <div className="flex items-center justify-between gap-3">
-                          <span className="font-semibold text-ink">{teamMap[trend.teamId] ?? trend.teamId}</span>
-                          <span
-                            className={`text-sm font-semibold ${
-                              (trend.deltaFromPreviousRank ?? 0) > 0
-                                ? "text-pine"
-                                : (trend.deltaFromPreviousRank ?? 0) < 0
-                                  ? "text-coral"
-                                  : "text-slate-700"
-                            }`}
-                          >
-                            {trend.deltaFromPreviousRank === null
-                              ? "신규/비교 불가"
-                              : `${trend.deltaFromPreviousRank > 0 ? "+" : ""}${formatDecimal(
-                                  trend.deltaFromPreviousRank,
-                                  1
-                                )}`}
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: brand.primary }} />
+                            <div>
+                              <p className="font-semibold text-ink">{teamMap[item.teamId] ?? item.teamId}</p>
+                              <p className="mt-1 text-xs text-slate-700">
+                                {item.previousSeasonRank
+                                  ? `직전 시즌 ${item.previousSeasonRank}위`
+                                  : "직전 시즌 데이터 없음"}
+                                {item.manualInitialRating !== null ? " · 수동 초기 rating 사용" : ""}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-semibold" style={{ color: brand.primary }}>
+                              {formatRating(item.blendedRating)}
+                            </p>
+                            <p className="text-xs text-slate-700">현재 기준 전력</p>
+                          </div>
                         </div>
-                        <p className="mt-2 text-sm text-slate-700">
-                          직전 시즌 {trend.previousRank ? `${trend.previousRank}위` : "기록 없음"} · 현재 기대 순위{" "}
-                          {formatDecimal(trend.expectedRank, 1)}위
-                        </p>
                       </div>
                     );
                   })}
                 </div>
               </Panel>
 
-              <Panel title="동률 메모">
-                {insight.tiebreakNotes.length === 0 ? (
-                  <p className="text-sm text-slate-700">현재는 별도 설명이 필요한 동률 구간이 없습니다.</p>
-                ) : (
+              <div className="space-y-6">
+                <Panel title="직전 시즌 대비 기대 순위 변화">
                   <div className="space-y-3">
-                    {insight.tiebreakNotes.map((note) => (
-                      <div
-                        key={`${note.higherTeamId}-${note.lowerTeamId}`}
-                        className="rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700"
-                      >
-                        {note.reason}
-                      </div>
-                    ))}
+                    {insight.teamTrends.map((trend) => {
+                      const brand = getTeamBrand(trend.teamId);
+                      return (
+                        <div key={trend.teamId} className="rounded-2xl px-4 py-4" style={{ backgroundColor: brand.soft }}>
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="font-semibold text-ink">{teamMap[trend.teamId] ?? trend.teamId}</span>
+                            <span
+                              className={`text-sm font-semibold ${
+                                (trend.deltaFromPreviousRank ?? 0) > 0
+                                  ? "text-pine"
+                                  : (trend.deltaFromPreviousRank ?? 0) < 0
+                                    ? "text-coral"
+                                    : "text-slate-700"
+                              }`}
+                            >
+                              {trend.deltaFromPreviousRank === null
+                                ? "신규/비교 불가"
+                                : `${trend.deltaFromPreviousRank > 0 ? "+" : ""}${formatDecimal(
+                                    trend.deltaFromPreviousRank,
+                                    1
+                                  )}`}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-sm text-slate-700">
+                            직전 시즌 {trend.previousRank ? `${trend.previousRank}위` : "기록 없음"} · 현재 기대 순위{" "}
+                            {formatDecimal(trend.expectedRank, 1)}위
+                          </p>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
-              </Panel>
+                </Panel>
+
+                <Panel title="동률 메모">
+                  {insight.tiebreakNotes.length === 0 ? (
+                    <p className="text-sm text-slate-700">현재는 별도 설명이 필요한 동률 구간이 없습니다.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {insight.tiebreakNotes.map((note) => (
+                        <div
+                          key={`${note.higherTeamId}-${note.lowerTeamId}`}
+                          className="rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700"
+                        >
+                          {note.reason}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Panel>
+              </div>
             </div>
-          </div>
+          </ExpandablePanel>
         </div>
       ) : null}
 

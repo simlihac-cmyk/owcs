@@ -8,9 +8,8 @@ import {
   createSeasonShell,
   createTeamsFromNames,
   generateRoundRobinMatches,
-  regenerateSeasonSchedule
+    regenerateSeasonSchedule
 } from "@/lib/domain/schedule";
-import { loadSampleLeague } from "@/lib/dataProviders/sampleLeague";
 import {
   ChangeLogEntry,
   CreateSeasonInput,
@@ -266,9 +265,23 @@ function areStringArraysEqual(left: string[], right: string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
-const initialLeague = normalizeIncomingLeague(loadSampleLeague());
+function createEmptyLeague(): League {
+  return {
+    id: "owcs_archive",
+    name: "OWCS League Archive",
+    teams: [],
+    seasons: [],
+    seasonTeams: [],
+    matches: [],
+    seasonPhases: [],
+    seasonEntries: [],
+    qualificationLinks: []
+  };
+}
+
+const initialLeague = normalizeIncomingLeague(createEmptyLeague());
 export const STORE_VERSION = 3;
-export const SAMPLE_DATA_VERSION = 6;
+export const SAMPLE_DATA_VERSION = 7;
 
 const noopStorage: StateStorage = {
   getItem: () => null,
@@ -291,33 +304,13 @@ function refreshBundledSampleIfEligible(
   sampleDataVersion: number;
   usesBundledSample: boolean;
 } {
-  if (sampleDataVersion === SAMPLE_DATA_VERSION) {
-    return {
-      league,
-      baselineLeague,
-      sampleDataVersion,
-      usesBundledSample: usesBundledSample ?? true
-    };
-  }
-
-  const latestBundledLeague = normalizeLeague(cloneLeague(initialLeague));
   const workspaceMatchesBaseline = areLeaguesEquivalent(league, baselineLeague);
-  const assumedUsesBundledSample = usesBundledSample ?? true;
-
-  if (!assumedUsesBundledSample || !workspaceMatchesBaseline) {
-    return {
-      league,
-      baselineLeague,
-      sampleDataVersion: SAMPLE_DATA_VERSION,
-      usesBundledSample: false
-    };
-  }
 
   return {
-    league: latestBundledLeague,
-    baselineLeague: latestBundledLeague,
+    league,
+    baselineLeague,
     sampleDataVersion: SAMPLE_DATA_VERSION,
-    usesBundledSample: true
+    usesBundledSample: usesBundledSample ?? workspaceMatchesBaseline
   };
 }
 
@@ -371,8 +364,8 @@ export const useLeagueStore = create<LeagueStoreState>()(
         {
           id: createId("log"),
           createdAt: new Date().toISOString(),
-          label: "기본 예시 데이터를 불러왔습니다.",
-          seasonId: getDefaultSelectedSeasonId(initialLeague)
+          label: "현재 기준 데이터를 불러오는 중입니다.",
+          seasonId: null
         }
       ],
       undoStack: [],
@@ -436,7 +429,7 @@ export const useLeagueStore = create<LeagueStoreState>()(
             predictionOverrides: {},
             selectedSeasonId: getDefaultSelectedSeasonId(league),
             scenarioSnapshots: [],
-            undoStack: appendUndoSnapshot(state, "최신 예시 데이터 불러오기"),
+            undoStack: appendUndoSnapshot(state, "현재 기준 데이터 불러오기"),
             changeLog: [
               makeChangeLogEntry("현재 기준 데이터로 작업 공간을 초기화했습니다."),
               ...state.changeLog

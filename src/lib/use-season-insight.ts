@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { computeSeasonInsight } from "@/lib/domain/simulation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { computeSeasonInsight, prepareSeasonInsightLeague } from "@/lib/domain/simulation";
 import { League, PredictionOverrides, SeasonInsight } from "@/lib/types";
 
 interface SeasonInsightState {
@@ -21,9 +21,25 @@ export function useSeasonInsight(
     isLoading: false,
     error: null
   });
+  const workerRef = useRef<Worker | null>(null);
+  const requestIdRef = useRef(0);
+  const simulationLeague = useMemo(() => {
+    if (!seasonId) {
+      return null;
+    }
+
+    return prepareSeasonInsightLeague(league, seasonId, predictionOverrides);
+  }, [league, predictionOverrides, seasonId]);
 
   useEffect(() => {
-    if (!seasonId) {
+    return () => {
+      workerRef.current?.terminate();
+      workerRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!seasonId || !simulationLeague) {
       setState({
         insight: null,
         isLoading: false,
@@ -41,7 +57,7 @@ export function useSeasonInsight(
 
     if (typeof Worker === "undefined") {
       try {
-        const insight = computeSeasonInsight(league, seasonId, predictionOverrides);
+        const insight = computeSeasonInsight(simulationLeague, seasonId);
         if (active) {
           setState({
             insight,
@@ -62,10 +78,20 @@ export function useSeasonInsight(
       return;
     }
 
-    const worker = new Worker(new URL("../workers/simulation.worker.ts", import.meta.url));
+    const worker =
+      workerRef.current ?? new Worker(new URL("../workers/simulation.worker.ts", import.meta.url));
+    workerRef.current = worker;
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
 
-    worker.onmessage = (event: MessageEvent<{ type: string; payload: SeasonInsight | string }>) => {
+    worker.onmessage = (
+      event: MessageEvent<{ requestId: number; type: string; payload: SeasonInsight | string }>
+    ) => {
       if (!active) {
+        return;
+      }
+
+      if (event.data.requestId !== requestId) {
         return;
       }
 
@@ -90,7 +116,7 @@ export function useSeasonInsight(
       }
 
       try {
-        const insight = computeSeasonInsight(league, seasonId, predictionOverrides);
+        const insight = computeSeasonInsight(simulationLeague, seasonId);
         setState({
           insight,
           isLoading: false,
@@ -105,13 +131,12 @@ export function useSeasonInsight(
       }
     };
 
-    worker.postMessage({ league, seasonId, predictionOverrides });
+    worker.postMessage({ requestId, league: simulationLeague, seasonId });
 
     return () => {
       active = false;
-      worker.terminate();
     };
-  }, [league, seasonId, predictionOverrides, revision]);
+  }, [revision, seasonId, simulationLeague]);
 
   return state;
 }

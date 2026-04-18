@@ -8,6 +8,9 @@ interface SeasonArchiveListProps {
   selectedSeasonId: string | null;
   onSelect: (seasonId: string) => void;
   onResetData: () => void;
+  sourceKind: "file" | "sample";
+  sourceUpdatedAt: string | null;
+  isShowingLocalWorkspace: boolean;
 }
 
 type SeasonBucket = "korea" | "asia" | "international";
@@ -65,7 +68,10 @@ export function SeasonArchiveList({
   league,
   selectedSeasonId,
   onSelect,
-  onResetData
+  onResetData,
+  sourceKind,
+  sourceUpdatedAt,
+  isShowingLocalWorkspace
 }: SeasonArchiveListProps) {
   const [selectedYear, setSelectedYear] = useState<number | null>(() =>
     getDefaultYear(league, selectedSeasonId)
@@ -123,7 +129,7 @@ export function SeasonArchiveList({
   return (
     <div className="space-y-4">
       <section className="ow-cut-panel ow-hero-panel ow-appear ow-stagger-1 px-5 py-6 text-[var(--ow-text)]">
-        <p className="ow-kicker">Season Archive</p>
+        <p className="ow-kicker">시즌 아카이브</p>
         <h2 className="ow-display-title mt-3 text-[2.4rem]">{league.name}</h2>
         <p className="mt-3 text-sm leading-6 text-[var(--ow-muted)]">
           연도와 대회 범주를 고르면 시즌별 순위표, 남은 경기 변수, 최종 순위 예측을 바로 비교할 수 있습니다.
@@ -147,19 +153,44 @@ export function SeasonArchiveList({
         </div>
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-slate-200/80 bg-[linear-gradient(90deg,rgba(255,255,255,0.86)_0%,rgba(246,248,252,0.88)_100%)] px-4 py-4">
-          <p className="text-sm leading-6 text-[var(--ow-muted)]">
-            입력한 값을 지우고 현재 기준 데이터로 되돌릴 때만 초기화를 사용하세요.
-          </p>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-slate-900">
+              {isShowingLocalWorkspace ? "서버 기준으로 되돌릴 수 있습니다." : "현재는 기준 데이터와 동기화되어 있습니다."}
+            </p>
+            <p className="text-sm leading-6 text-[var(--ow-muted)]">
+              {isShowingLocalWorkspace
+                ? "초기화하면 이 브라우저에 저장된 결과/예측 입력을 지우고 최신 기준 데이터 상태로 복구합니다."
+                : sourceKind === "file"
+                  ? "운영 원본이 바뀌었을 때만 초기화 버튼을 사용할 필요가 있습니다."
+                  : "관리자 원본 파일이 아직 없어 샘플 fallback 기준으로 동작합니다."}
+            </p>
+            <p className="text-xs text-slate-500">
+              기준 시각:{" "}
+              {sourceUpdatedAt
+                ? new Intl.DateTimeFormat("ko-KR", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  }).format(new Date(sourceUpdatedAt))
+                : "기준 시각 없음"}
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => {
-              if (window.confirm("지금까지 입력한 예측을 지우고 현재 기준 데이터 상태로 복구할까요?")) {
+              if (
+                window.confirm(
+                  "이 브라우저의 입력값을 지우고 현재 기준 데이터 상태로 되돌릴까요?"
+                )
+              ) {
                 onResetData();
               }
             }}
             className="ow-danger-button rounded-full px-4 py-2 text-sm font-semibold transition"
           >
-            입력 내용 초기화
+            현재 기준으로 초기화
           </button>
         </div>
       </section>

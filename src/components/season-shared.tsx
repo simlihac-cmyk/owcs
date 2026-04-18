@@ -36,3 +36,38 @@ export function Panel(props: { title: string; description?: string; children: Re
     </section>
   );
 }
+
+export function ExpandablePanel(props: {
+  title: string;
+  description?: string;
+  summaryNote?: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details
+      className="ow-cut-panel ow-appear ow-grid-surface overflow-hidden p-5 text-[var(--ow-text)]"
+      open={props.defaultOpen}
+    >
+      <summary className="flex cursor-pointer list-none flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="ow-title text-sm font-semibold uppercase text-slate-950">{props.title}</h3>
+          {props.description ? (
+            <p className="mt-2 text-sm leading-6 text-[var(--ow-muted)]">{props.description}</p>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-2">
+          {props.summaryNote ? (
+            <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700">
+              {props.summaryNote}
+            </span>
+          ) : null}
+          <span className="rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-xs font-semibold text-slate-700">
+            펼치기 / 접기
+          </span>
+        </div>
+      </summary>
+      <div className="mt-4 border-t border-slate-200/70 pt-4">{props.children}</div>
+    </details>
+  );
+}

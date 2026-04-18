@@ -56,6 +56,17 @@ export function decodeBasicAuthHeader(value: string | null): {
   }
 }
 
+function secureEqual(left: string, right: string): boolean {
+  const maxLength = Math.max(left.length, right.length);
+  let diff = left.length === right.length ? 0 : 1;
+
+  for (let index = 0; index < maxLength; index += 1) {
+    diff |= (left.charCodeAt(index) || 0) ^ (right.charCodeAt(index) || 0);
+  }
+
+  return diff === 0;
+}
+
 export function isAuthorizedAdminRequest(
   authorizationHeader: string | null,
   env: NodeJS.ProcessEnv = process.env
@@ -76,5 +87,5 @@ export function isAuthorizedAdminRequest(
     return false;
   }
 
-  return credentials.username === config.username && credentials.password === config.password;
+  return secureEqual(credentials.username, config.username) && secureEqual(credentials.password, config.password);
 }

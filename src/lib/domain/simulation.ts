@@ -3,7 +3,8 @@ import { applyPredictionOverrides } from "@/lib/domain/predictions";
 import {
   buildPreviousSeasonStatsFromArchive,
   buildRatingBlend,
-  deriveInitialRatings
+  deriveInitialRatings,
+  recommendPriorSeasonId
 } from "@/lib/domain/prior";
 import { aggregateSeasonResults } from "@/lib/domain/standings";
 import {
@@ -574,6 +575,47 @@ function calculateExpectedSwingByTeam(params: {
   }));
 }
 
+function getSeasonInsightSeasonIds(league: League, season: Season): Set<string> {
+  const seasonIds = new Set<string>([season.id]);
+  const priorSeasonId = season.priorSeasonId ?? recommendPriorSeasonId(league, season);
+
+  if (priorSeasonId) {
+    seasonIds.add(priorSeasonId);
+  }
+
+  return seasonIds;
+}
+
+export function prepareSeasonInsightLeague(
+  league: League,
+  seasonId: string,
+  predictionOverrides: PredictionOverrides = {}
+): League {
+  const season = league.seasons.find((candidate) => candidate.id === seasonId);
+
+  if (!season) {
+    throw new Error(`Season not found: ${seasonId}`);
+  }
+
+  const seasonIds = getSeasonInsightSeasonIds(league, season);
+  const seasons = league.seasons.filter((candidate) => seasonIds.has(candidate.id));
+  const teamIds = new Set(seasons.flatMap((candidate) => candidate.teamIds));
+
+  return applyPredictionOverrides(
+    {
+      id: league.id,
+      name: league.name,
+      teams: league.teams.filter((team) => teamIds.has(team.id)),
+      seasons,
+      seasonTeams: league.seasonTeams.filter(
+        (seasonTeam) => seasonIds.has(seasonTeam.seasonId) && teamIds.has(seasonTeam.teamId)
+      ),
+      matches: league.matches.filter((match) => seasonIds.has(match.seasonId))
+    },
+    predictionOverrides
+  );
+}
+
 function analyzeRemainingMatchInsights(params: {
   league: League;
   season: Season;
@@ -704,15 +746,15 @@ export function computeSeasonInsight(
   seasonId: string,
   predictionOverrides: PredictionOverrides = {}
 ): SeasonInsight {
-  const season = league.seasons.find((candidate) => candidate.id === seasonId);
+  const simulationLeague = prepareSeasonInsightLeague(league, seasonId, predictionOverrides);
+  const season = simulationLeague.seasons.find((candidate) => candidate.id === seasonId);
 
   if (!season) {
     throw new Error(`Season not found: ${seasonId}`);
   }
 
-  const simulationLeague = applyPredictionOverrides(league, predictionOverrides);
-  const previousSeasonStats = buildPreviousSeasonStatsFromArchive(league, season);
-  const initialRatings = deriveInitialRatings(league, season, previousSeasonStats);
+  const previousSeasonStats = buildPreviousSeasonStatsFromArchive(simulationLeague, season);
+  const initialRatings = deriveInitialRatings(simulationLeague, season, previousSeasonStats);
   const core = simulateSeasonCore({
     league: simulationLeague,
     season,
